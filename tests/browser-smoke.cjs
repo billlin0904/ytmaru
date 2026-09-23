@@ -9,10 +9,21 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
  fs.appendFileSync(path.join(extension,'service-worker.js'),'\nglobalThis.__ytmaruSeedSessions = value => { nt=value; at=value[0]||null; };\n');
  const context=await chromium.launchPersistentContext(path.join(fixture,'profile'),{channel:process.env.YTMARU_BROWSER_CHANNEL||'chromium',headless:true,args:['--disable-extensions-except='+extension,'--load-extension='+extension]});
  try {
- fs.mkdirSync('test-results',{recursive:true}); const requests=[],errors=[];
+ fs.mkdirSync('test-results',{recursive:true}); const requests=[],errors=[],quotaResults=[];
+ let balanceFixture=null;
+ const billing={rates:{sttCreditsPerMinute:1,captionCreditsPerMinute:1,chatInputCharactersPerCredit:1000},usage:{sttMs:1000,captionMs:1000,chatCharacters:0},chargedCredits:2,availableCredits:98,reservedCredits:0};
+ context.on('page',tab=>tab.on('pageerror',error=>errors.push(`${tab.url()}: ${error.message}`)));
+ // Deny any unmocked network request. The browser fixture must never contact a
+ // real video site or translation service, including after a regression.
+ await context.route(/^https?:\/\//,route=>route.abort('blockedbyclient'));
  await context.route('https://textamisu.com/**', async route=>{
   const request=route.request(),url=new URL(request.url()); requests.push({method:request.method(),path:url.pathname});
-  const billing={rates:{sttCreditsPerMinute:1,captionCreditsPerMinute:1,chatInputCharactersPerCredit:1000},usage:{sttMs:1000,captionMs:1000,chatCharacters:0},chargedCredits:2,availableCredits:98,reservedCredits:0};
+  const current=balanceFixture;
+  const balanceRequest=request.method()==='GET'&&(url.pathname.endsWith('/credits')||url.pathname.endsWith('/'+current?.remoteId));
+  if(current&&balanceRequest){current.requests++;await current.gate;}
+  if(current&&request.method()==='GET'&&url.pathname.endsWith('/'+current.remoteId)&&current.mode==='missing'){
+   await route.fulfill({status:404,contentType:'application/json',body:JSON.stringify({error:{code:'not_found',message:'Fixture session is unavailable'}})});return;
+  }
   let data;
   if(url.pathname.endsWith('/credits')) data={account:{email:'qa@example.invalid'},totalMinutes:100,textMinutes:100,outputMinutes:100,eligibleMinutes:100};
   else if(url.pathname.endsWith('/live-sessions')) data={sessionId:'remote-qa',billing};
@@ -38,7 +49,7 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
   return {stt:stt.text,ids:stt.sttRequestIds,translation:translated.translation};
  });
  assert.equal(result.translation,'你好世界。');assert.equal(result.ids.length,1);
- await context.route('https://www.youtube.com/watch?v=ytmaru-fixture',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>ytmaru test fixture</title><p>Mock video page</p>'}));
+ await context.route('https://www.youtube.com/watch?*',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>ytmaru test fixture</title><body style="background:#171b25;color:#dae1ef;font-family:system-ui;margin:40px"><h1>ytmaru 隔離測試影片</h1><video controls width="960" height="360" style="background:#080b11"></video></body></html>'}));
  const video=await context.newPage();await video.goto('https://www.youtube.com/watch?v=ytmaru-fixture');
  const chat=await worker.evaluate(async()=>{
   const [tab]=await chrome.tabs.query({url:'https://www.youtube.com/watch?v=ytmaru-fixture'});
@@ -59,13 +70,90 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
  const ended=await page.evaluate(()=>chrome.runtime.sendMessage({type:'TEXTAMISU_SESSION_END',sessionId:'qa-local'}));
  assert.equal(ended.ok,true);
  assert.equal(requests.filter(r=>r.path.endsWith('/live-sessions')).length,1);
+ await page.close();await video.close();
+
+ async function waitUntil(check,label,timeout=5000){
+  const deadline=Date.now()+timeout;
+  while(Date.now()<deadline){if(await check())return;await new Promise(resolve=>setTimeout(resolve,50));}
+  throw new Error('Timed out: '+label);
+ }
+ function cleanPanel(text,label){
+  assert.doesNotMatch(text,/slow_credit|USD|智慧搜尋|\$/i,label+' must not contain legacy billing');
+  for(const metric of ['音訊時長','字幕緩衝','延遲'])assert.ok(text.includes(metric),label+' missing '+metric);
+ }
+ // These are the production injection order and startup message. No test-only
+ // renderer or synthetic usage event is used: the first open itself must work.
+ async function quotaCase(surface,mode){
+  const sessionId=`quota-${surface}-${mode}`,remoteId=`remote-${sessionId}`;
+  let release;
+  const gate=new Promise(resolve=>{release=resolve;});
+  balanceFixture={mode,remoteId,requests:0,gate};
+  const tab=await context.newPage();
+  await tab.setViewportSize({width:1280,height:900});
+  const videoUrl=`https://www.youtube.com/watch?v=${sessionId}`;
+  await tab.goto(videoUrl);
+  const config={sourceLang:'eng',targetLang:'zh',provider:'textamisu',sttProvider:'textamisu',uiLocale:'zh_TW',syncEnabled:false,videoSyncEnabled:false,liveChatEnabled:false};
+  const tabId=await worker.evaluate(async({videoUrl,sessionId,remoteId,mode,config,surface})=>{
+   const [current]=await chrome.tabs.query({url:videoUrl});
+   __ytmaruSeedSessions([{sessionId,tabId:current.id,sourceTabId:current.id,displayTabId:current.id,mirrorDelayEnabled:surface==='mirror',config}]);
+   if(mode!=='pending')await chrome.storage.session.set({['textamisuLive:'+sessionId]:{sessionId:remoteId}});
+   if(surface==='content'){
+    await chrome.scripting.executeScript({target:{tabId:current.id},files:['wallet-interactions.js','live-chat-shared.js','caption-balance-display.js','content-script.js']});
+    const initialized=await chrome.tabs.sendMessage(current.id,{type:'LIVE_SUBTITLE_INIT',sessionId,config});
+    if(!initialized?.ok)throw new Error('LIVE_SUBTITLE_INIT failed: '+JSON.stringify(initialized));
+   }
+   return current.id;
+  },{videoUrl,sessionId,remoteId,mode,config,surface});
+  if(surface==='mirror')await tab.goto(`chrome-extension://${id}/mirror-viewer.html?sessionId=${sessionId}&uiLocale=zh_TW`);
+  const panel=tab.locator(surface==='content'?'.usage-panel':'#usagePanel');
+  const toggle=tab.locator(surface==='content'?'button[data-action="usage-toggle"]':'#usageToggleButton');
+  await toggle.waitFor({state:'attached'});
+  // Include hidden initial markup, so obsolete rows cannot merely be hidden
+  // after a balance update to make this assertion pass.
+  cleanPanel(await panel.textContent(),`${surface}/${mode} initial mount`);
+  if(await toggle.getAttribute('aria-expanded')!=='true')await toggle.click();
+  await panel.waitFor({state:'visible'});
+  cleanPanel(await panel.innerText(),`${surface}/${mode} first open`);
+  await waitUntil(()=>balanceFixture.requests>0,`${surface}/${mode} balance request`);
+  assert.match(await panel.innerText(),/讀取中/,`${surface}/${mode} pending request state`);
+  // Use the real drag interaction to bring the downward-opening panel into
+  // view. Keep the initial mount/open assertions above at the default position.
+  const handle=await tab.locator('.status-pill').boundingBox();
+  await tab.mouse.move(handle.x+handle.width/2,handle.y+handle.height/2);
+  await tab.mouse.down();
+  await tab.mouse.move(handle.x+handle.width/2,30,{steps:10});
+  await tab.mouse.up();
+  const bounds=await panel.boundingBox();
+  assert.ok(bounds&&bounds.y>=0&&bounds.y+bounds.height<=900,`${surface}/${mode} full panel must fit screenshot after toolbar drag`);
+  if(mode==='ready')await tab.screenshot({path:`test-results/${surface}-quota-loading.png`,fullPage:true});
+  release();
+  const expected=mode==='ready'?/可用 98／預留 0 credits/:/帳戶餘額 100 credits/;
+  await waitUntil(async()=>expected.test(await panel.innerText()),`${surface}/${mode} balance result`,9000);
+  const text=await panel.innerText();cleanPanel(text,`${surface}/${mode} result`);
+  assert.doesNotMatch(text,/讀取中/,`${surface}/${mode} must leave loading state`);
+  if(mode==='ready'){
+   assert.match(text,/本次已扣\s*2 credits/);assert.match(text,/字幕 1 credits／分鐘/);
+  }else{
+   assert.match(text,/本次已扣\s*尚未取得/);assert.match(text,mode==='missing'?/404/:/尚未就緒/);
+   assert.doesNotMatch(text,/可用 100|預留 0/,`${surface}/${mode} must not invent usable or reserved balance`);
+   assert.equal(await panel.locator('[data-balance-field="balance"]').evaluate(element=>element.closest('.usage-row').querySelector('dt').textContent),'帳戶餘額');
+  }
+  await tab.screenshot({path:`test-results/${surface}-quota-${mode}.png`,fullPage:true});
+  quotaResults.push({surface,mode,tabId,text});
+  await worker.evaluate(()=>__ytmaruSeedSessions([]));
+  await tab.close();balanceFixture=null;
+ }
+ for(const surface of ['content','mirror'])for(const mode of ['ready','pending','missing'])await quotaCase(surface,mode);
+
  const popup=await context.newPage();popup.on('pageerror',error=>errors.push(error.message));
  await popup.goto(`chrome-extension://${id}/popup.html`);
  await popup.waitForTimeout(500);
  assert.equal(await popup.locator('#statusLabel').innerText(),'待命');
  assert.equal(await popup.locator('#authState').innerText(),'已連線');
  assert.equal(await popup.locator('#accountBalance').innerText(),'100');
- console.log(JSON.stringify({id,result,chat,ended,requests,errors},null,2));
+ const report={id,result,chat,ended,quotaResults,requests,errors};
+ fs.writeFileSync('test-results/browser-smoke.json',JSON.stringify(report,null,2));
+ console.log(JSON.stringify(report,null,2));
  await popup.screenshot({path:'test-results/popup.png',fullPage:true});
  assert.equal(errors.length,0);
  } finally { await context.close(); }

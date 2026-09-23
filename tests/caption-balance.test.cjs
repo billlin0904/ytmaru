@@ -82,7 +82,9 @@ test('switching sessions ignores the previous session response and does not add 
   const pending = new Map(), root = fakeRoot();
   const harness = monitorHarness(message => new Promise(resolve => pending.set(message.sessionId, resolve)));
   harness.monitor.update({ root, sessionId: 'old', active: true });
+  await flush();
   harness.monitor.update({ root, sessionId: 'new', active: true });
+  await flush();
   pending.get('new')({ ok: true, sessionId: 'new', billing: { ...billing, availableCredits: 7 } });
   await flush();
   pending.get('old')({ ok: true, sessionId: 'old', billing });
@@ -90,6 +92,76 @@ test('switching sessions ignores the previous session response and does not add 
   assert.match(harness.monitor.summary(), /可用 7 credits/);
   assert.equal(harness.timers.size, 1);
   harness.monitor.stop();
+});
+
+test('account balance is usable before the remote session exists without fabricating charges or available credits', async () => {
+  const root = fakeRoot();
+  const harness = monitorHarness(async message => ({ ok: true, sessionId: message.sessionId,
+    credits: { totalMinutes: 12.5 }, billing: null, balanceState: 'session-pending', balanceError: { code: 'session_pending' } }));
+  harness.monitor.update({ root, sessionId: 'local', active: true });
+  await flush();
+  assert.match(root.fields.balance.textContent, /帳戶餘額 12\.5 credits/);
+  assert.equal(root.fields.time.textContent, '尚未取得');
+  assert.match(root.fields.note.textContent, /尚未就緒/);
+  assert.match(root.fields.note.textContent, /尚未扣除.*預留/);
+  assert.doesNotMatch(root.fields.summary.textContent, /可用|讀取中/);
+  assert.equal(harness.timers.values().next().value.delay, 5000);
+  harness.monitor.stop();
+});
+
+test('a lost worker reply times out, ignores late data and then recovers on retry', async () => {
+  let resolveFirst, calls = 0;
+  const root = fakeRoot();
+  const harness = monitorHarness(message => ++calls === 1 ? new Promise(resolve => { resolveFirst = resolve; })
+    : Promise.resolve({ ok: true, sessionId: message.sessionId, billing }));
+  harness.monitor.update({ root, sessionId: 'local', active: true });
+  await flush();
+  assert.equal(harness.timers.values().next().value.delay, 8000);
+  await harness.tick();
+  assert.match(root.fields.note.textContent, /逾時/);
+  assert.equal(root.fields.time.textContent, '尚未取得');
+  assert.doesNotMatch(root.fields.summary.textContent, /讀取中/);
+  resolveFirst({ ok: true, sessionId: 'local', billing: { ...billing, availableCredits: 999 } });
+  await flush();
+  assert.doesNotMatch(root.fields.balance.textContent, /999/);
+  assert.equal(harness.timers.size, 1);
+  await harness.tick();
+  assert.match(root.fields.summary.textContent, /8\.7375 credits/);
+  assert.equal(harness.timers.size, 1);
+  harness.monitor.stop();
+});
+
+test('401 and session 404 are actionable and no initial error leaves loading placeholders', async () => {
+  for (const reply of [
+    { ok: false, status: 401, code: 'unauthorized' },
+    { ok: true, sessionId: 'local', credits: { totalMinutes: 0 }, billing: null,
+      balanceState: 'session-error', balanceError: { status: 404, code: 'live_session_unavailable' } },
+  ]) {
+    const root = fakeRoot(), harness = monitorHarness(async () => reply);
+    harness.monitor.update({ root, sessionId: 'local', active: true });
+    await flush();
+    assert.doesNotMatch(Object.values(root.fields).map(field => field.textContent).join(' '), /讀取中/);
+    assert.match(root.fields.note.textContent, reply.ok ? /404/ : /token.*重新輸入/);
+    assert.equal(root.fields.time.textContent, '尚未取得');
+    if (reply.ok) assert.match(root.fields.balance.textContent, /帳戶餘額 0 credits/);
+    harness.monitor.stop();
+  }
+});
+
+test('inactive or stopped views show a finite state and cancel pending requests', async () => {
+  const root = fakeRoot();
+  let resolve;
+  const harness = monitorHarness(() => new Promise(done => { resolve = done; }));
+  harness.monitor.update({ root, sessionId: null, active: false });
+  assert.equal(root.fields.summary.textContent, '字幕尚未啟動');
+  assert.equal(harness.timers.size, 0);
+  harness.monitor.update({ root, sessionId: 'local', active: true });
+  await flush();
+  harness.monitor.update({ root, sessionId: 'local', active: false });
+  resolve({ ok: true, sessionId: 'local', billing });
+  await flush();
+  assert.equal(harness.timers.size, 0);
+  assert.equal(root.fields.summary.textContent, '字幕尚未啟動');
 });
 
 test('cost rows and their old notes are hidden while audio and latency metrics remain', () => {

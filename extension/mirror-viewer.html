@@ -41,10 +41,10 @@
             data-action="usage-toggle"
             data-balance-field="summary"
             type="button"
-            title="本次字幕估算額度"
+            title="Textamisu 額度與本次用量"
             aria-expanded="false"
           >
-            剩餘額度讀取中</button
+            Textamisu 額度讀取中</button
           ><span class="tb-sep" aria-hidden="true"></span>
           <div class="font-control" role="group" aria-label="字體大小">
             <button
@@ -130,154 +130,35 @@
           </button>
         </div>
         <aside id="usagePanel" class="usage-panel" aria-live="polite">
-          <div class="usage-panel-title">本次用量估算</div>
-
+          <div class="usage-panel-title">Textamisu 用量與狀態</div>
           <div class="usage-section">
-            <div class="usage-section-head">帳戶剩餘額度</div>
+            <div class="usage-section-head">Textamisu 額度</div>
             <dl class="usage-grid">
-              <div class="usage-row">
-                <dt>剩餘額度</dt>
-                <dd data-balance-field="balance">讀取中</dd>
-              </div>
-              <div class="usage-row primary">
-                <dt>預估可用時間</dt>
-                <dd data-balance-field="time">計算中</dd>
-              </div>
-              <div class="usage-row">
-                <dt>目前模式</dt>
-                <dd data-balance-field="rate">--</dd>
-              </div>
+              <div class="usage-row"><dt>可用／預留</dt><dd data-balance-field="balance">讀取中</dd></div>
+              <div class="usage-row primary"><dt>本次已扣</dt><dd data-balance-field="time">讀取中</dd></div>
+              <div class="usage-row"><dt>計費方式</dt><dd data-balance-field="rate">Textamisu</dd></div>
             </dl>
-            <div class="usage-note" data-balance-field="note"></div>
+            <div class="usage-note" data-balance-field="note">等待 Textamisu 回傳實際額度。</div>
           </div>
           <div class="usage-section">
-            <div class="usage-section-head">本次用量</div>
+            <div class="usage-section-head">音訊與批次</div>
             <dl class="usage-grid">
-              <div class="usage-row primary">
-                <dt>slow_credit</dt>
-                <dd data-usage-field="credits">0</dd>
-              </div>
-              <div class="usage-row" data-wallet-usage-row hidden>
-                <dt>錢包扣款</dt>
-                <dd data-usage-field="walletCharges"></dd>
-              </div>
-              <div class="usage-row" data-pass-status-row hidden>
-                <dt>吃到飽</dt>
-                <dd data-usage-field="passStatus"></dd>
-              </div>
-              <div class="usage-row primary">
-                <dt>USD</dt>
-                <dd data-usage-field="usd">$0</dd>
-              </div>
-              <div class="usage-row" data-dev-only="true" hidden>
-                <dt>字幕額度</dt>
-                <dd data-usage-field="subtitleUsage">0 credits / $0</dd>
-              </div>
-              <div class="usage-row" data-dev-only="true" hidden>
-                <dt>聊天室額度</dt>
-                <dd data-usage-field="chatUsage">0 credits / $0</dd>
-              </div>
-              <div class="usage-row" data-dev-only="true" hidden>
-                <dt>回覆額度</dt>
-                <dd data-usage-field="replyUsage">0 credits / $0</dd>
-              </div>
-              <div class="usage-row" data-dev-only="true" hidden>
-                <dt>開啟時間</dt>
-                <dd data-usage-field="elapsed">0s</dd>
-              </div>
+              <div class="usage-row"><dt>開啟時間</dt><dd data-usage-field="elapsed">0s</dd></div>
+              <div class="usage-row"><dt>音訊時長</dt><dd data-usage-field="stt">0s</dd></div>
+              <div class="usage-row"><dt>VAD</dt><dd data-usage-field="vad">等待樣本</dd></div>
+              <div class="usage-row"><dt>批次</dt><dd data-usage-field="batch">等待樣本</dd></div>
             </dl>
           </div>
           <div class="usage-section">
-            <div class="usage-section-head">STT 引擎</div>
+            <div class="usage-section-head">字幕狀態</div>
             <dl class="usage-grid">
-              <div class="usage-row">
-                <dt>STT</dt>
-                <dd data-usage-field="stt">0s / $0 / 0 credits</dd>
-              </div>
-              <div class="usage-row" data-dev-only="true" hidden>
-                <dt>VAD</dt>
-                <dd data-usage-field="vad">off</dd>
-              </div>
+              <div class="usage-row"><dt>字幕流</dt><dd data-usage-field="pipeline">等待樣本</dd></div>
+              <div class="usage-row"><dt>字幕緩衝</dt><dd data-usage-field="subtitleBuffer">未播 0 段</dd></div>
+              <div class="usage-row"><dt>延遲</dt><dd data-usage-field="latency">等待樣本</dd></div>
+              <div class="usage-row"><dt>翻譯服務</dt><dd data-usage-field="provider">Textamisu</dd></div>
+              <div class="usage-row"><dt>用量來源</dt><dd data-usage-field="source">Textamisu API</dd></div>
             </dl>
           </div>
-          <div class="usage-section">
-            <div class="usage-section-head">翻譯</div>
-            <dl class="usage-grid">
-              <div class="usage-row">
-                <dt>LLM</dt>
-                <dd data-usage-field="llm">
-                  0 tokens / 0 calls / $0 / 0 credits
-                </dd>
-              </div>
-              <div class="usage-row" data-dev-only="true" hidden>
-                <dt>Batch</dt>
-                <dd data-usage-field="batch">off</dd>
-              </div>
-              <div class="usage-row" data-dev-only="true" hidden>
-                <dt>Provider</dt>
-                <dd data-usage-field="provider">-</dd>
-              </div>
-              <div class="usage-row" data-dev-only="true" hidden>
-                <dt>期限救援</dt>
-                <dd data-usage-field="fallback">0 次 / $0 / 0 credits</dd>
-              </div>
-              <div class="usage-row" data-dev-only="true" hidden>
-                <dt>故障切備援</dt>
-                <dd data-usage-field="providerErrorRescue">
-                  0 次 / $0 / 0 credits
-                </dd>
-              </div>
-            </dl>
-          </div>
-          <div class="usage-section" data-dev-only="true" hidden>
-            <div class="usage-section-head">Token 明細</div>
-            <dl class="usage-grid">
-              <div class="usage-row">
-                <dt>Input</dt>
-                <dd data-usage-field="input">0 tokens / $0 / 0 credits</dd>
-              </div>
-              <div class="usage-row">
-                <dt>Output billed</dt>
-                <dd data-usage-field="output">0 tokens / $0 / 0 credits</dd>
-              </div>
-              <div class="usage-row">
-                <dt>Visible output</dt>
-                <dd data-usage-field="visibleOutput">
-                  0 tokens / $0 / 0 credits
-                </dd>
-              </div>
-              <div class="usage-row">
-                <dt>Thinking</dt>
-                <dd data-usage-field="thinking">0 tokens / $0 / 0 credits</dd>
-              </div>
-            </dl>
-          </div>
-          <div class="usage-section" data-dev-only="true" hidden>
-            <div class="usage-section-head">運行狀態</div>
-            <dl class="usage-grid">
-              <div class="usage-row">
-                <dt>字幕流</dt>
-                <dd data-usage-field="pipeline">等待樣本</dd>
-              </div>
-              <div class="usage-row">
-                <dt>字幕緩衝</dt>
-                <dd data-usage-field="subtitleBuffer">未播 0 段</dd>
-              </div>
-              <div class="usage-row">
-                <dt>延遲</dt>
-                <dd data-usage-field="latency">等待樣本</dd>
-              </div>
-              <div class="usage-row">
-                <dt>更新</dt>
-                <dd data-usage-field="source">本機估算</dd>
-              </div>
-            </dl>
-          </div>
-          <p class="usage-note">1 USD = 100,000 slow_credit。</p>
-          <p class="usage-note" data-dev-only="true" hidden>
-            Thinking 會併入 output billed
-            成本；字幕、聊天室與回覆分項僅供開發者觀察。
-          </p>
         </aside>
         <aside
           id="settingsPanel"

@@ -12,6 +12,8 @@ Chrome / Edge 的影片字幕擴充功能。以 Textamisu Agent API token 進行
 
 Token 只存在擴充功能的 `chrome.storage.session`，關閉瀏覽器後需要重新輸入。網頁 content script 不會取得 token，也不會把 token 放入字幕設定或 URL。設定 API 網址時，瀏覽器會要求該來源的存取權。
 
+更新擴充功能後，請重新整理已開啟的影片頁面，讓頁面載入新版字幕面板。0.2.1 修正了首次開啟時用量尚未產生造成的畫面更新中斷，移除原本的 `slow_credit`／USD 估算，並限制額度讀取等待時間。若即時字幕工作階段尚未就緒，會先顯示 API 回傳的帳戶餘額；本次已扣與預留額度須等工作階段回傳，不會以 0 代替。
+
 ## API 與計費
 
 | 功能 | API | 用量 |

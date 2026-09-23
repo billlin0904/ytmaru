@@ -4513,7 +4513,7 @@
     globalThis.SubruuCaptionBalance?.renderMetrics(S.usagePanel, S.usageFields, {
       elapsed: Na(usage.elapsedSeconds), stt: Na(usage.sttDurationSeconds),
       vad: usage.vadEnabled ? "省 " + Na(usage.vadSkippedAudioSeconds) : "off",
-      batch: Da(usage.batch), pipeline: Ua(usage.pipeline), subtitleBuffer: "未播 " + Ra(te.length) + " 段／已顯示 " + Ra(Ce.length) + " 段",
+      batch: Da(usage.batch || {}), pipeline: Ua(usage.pipeline || {}), subtitleBuffer: "未播 " + Ra(te.length) + " 段／已顯示 " + Ra(Ce.length) + " 段",
       latency: xa(usage.latency), provider: "Textamisu", source: "Textamisu API",
     });
   }
@@ -5093,6 +5093,7 @@
       S.quota.addEventListener("click", () => {
         (($e.usagePanelOpen = !$e.usagePanelOpen),
           $e.usagePanelOpen && ($e.settingsPanelOpen = !1),
+          Ca(De),
           _a(),
           Ha());
       }),

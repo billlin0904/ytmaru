@@ -10453,14 +10453,38 @@ async function _o() {
   return e?.[b] || e?.[y] || null;
 }
 async function No(e, t) {
-if(t.id!==chrome.runtime.id) return {ok:false,reason:'invalid-sender'};
- const active=await xo(e.sessionId);
- const mirror=String(t.url||'').split('?')[0]===chrome.runtime.getURL('mirror-viewer.html');
- if(!active || (!mirror && !Zo(active).includes(Number(t.tab?.id)))) return {ok:false,reason:'wrong-session'};
- const credits=await TextamisuApi.credits();
- const key=`textamisuLive:${e.sessionId}`, remote=(await chrome.storage.session.get(key))[key];
- const state=remote?.sessionId ? await TextamisuApi.session(remote.sessionId) : null;
- return {ok:true,sessionId:e.sessionId,credits,billing:state?.billing||null};
+  if(t.id!==chrome.runtime.id) return {ok:false,reason:'invalid-sender'};
+  const active=await xo(e.sessionId);
+  const mirror=String(t.url||'').split('?')[0]===chrome.runtime.getURL('mirror-viewer.html');
+  if(!active || (!mirror && !Zo(active).includes(Number(t.tab?.id)))) return {ok:false,reason:'wrong-session'};
+  const key=`textamisuLive:${e.sessionId}`, remote=(await chrome.storage.session.get(key))[key];
+  const [accountResult, sessionResult]=await Promise.allSettled([
+    TextamisuApi.credits({timeoutMs:6000}),
+    remote?.sessionId ? TextamisuApi.session(remote.sessionId,{timeoutMs:6000}) : Promise.resolve(null),
+  ]);
+  const candidate=accountResult.status==='fulfilled' ? accountResult.value : null;
+  const credits=typeof candidate?.totalMinutes==='number' && Number.isFinite(candidate.totalMinutes) && candidate.totalMinutes>=0 ? candidate : null;
+  const candidateBilling=sessionResult.status==='fulfilled' ? sessionResult.value?.billing : null;
+  const billing=candidateBilling && typeof candidateBilling==='object' && !Array.isArray(candidateBilling)
+    && ['availableCredits','reservedCredits','chargedCredits'].every(field=>typeof candidateBilling[field]==='number' && Number.isFinite(candidateBilling[field]) && candidateBilling[field]>=0)
+    ? candidateBilling : null;
+  const classify=(error, fallback, isSession=false)=>{
+    const timeout=error?.name==='TimeoutError' || error?.code==='request_timeout';
+    const status=timeout ? 408 : Number(error?.status)||0;
+    const code=isSession && status===404 ? 'live_session_unavailable' : timeout ? 'request_timeout' : typeof error?.code==='string' ? error.code : error?.transportError ? 'network_error' : fallback;
+    return {code,status};
+  };
+  const balanceError=billing ? null : !remote?.sessionId
+    ? {code:'session_pending',status:0}
+    : classify(sessionResult.status==='rejected' ? sessionResult.reason : null,'billing_unavailable',true);
+  const balanceState=billing ? 'ready' : remote?.sessionId ? 'session-error' : 'session-pending';
+  if(!billing && !credits) {
+    const accountError=classify(accountResult.status==='rejected' ? accountResult.reason : null,'credits_unavailable');
+    const error=[accountError,balanceError].find(value=>[401,403].includes(value?.status))
+      || (sessionResult.status==='rejected' ? balanceError : accountResult.status==='rejected' ? accountError : balanceState==='session-error' ? balanceError : accountError);
+    return {ok:false,sessionId:e.sessionId,code:error.code,status:error.status,balanceState,balanceError};
+  }
+  return {ok:true,sessionId:e.sessionId,credits,billing,balanceState,...(balanceError ? {balanceError} : {})};
 }
 async function Po(e = {}) {
   if (at) return e.validate ? await Oo(at) : at;
