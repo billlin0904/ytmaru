@@ -233,7 +233,8 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
   await tab.close();balanceFixture=null;
  }
  for(const surface of ['content','mirror'])for(const mode of ['ready','pending','missing'])await quotaCase(surface,mode);
- const replayChatResults=await require('./chat-replay-browser.cjs')({context,worker,id,billing,waitUntil});
+ const replayChatResults=process.env.YTMARU_CHAT_AVAILABILITY_ONLY==='1'?[]:await require('./chat-replay-browser.cjs')({context,worker,id,billing,waitUntil});
+ const chatFrameVariantResults=await require('./chat-frame-variants-browser.cjs')({context,worker,requests});
 
  const popup=await context.newPage();popup.on('pageerror',error=>errors.push(error.message));
  await popup.goto(`chrome-extension://${id}/popup.html`);
@@ -241,7 +242,7 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
  assert.equal(await popup.locator('#statusLabel').innerText(),'待命');
  assert.equal(await popup.locator('#authState').innerText(),'已連線');
  assert.equal(await popup.locator('#accountBalance').innerText(),'100');
- const report={id,result,nativeRunner,aborted,chat,ended,missingSessionRoute,quotaResults,replayChatResults,requests,errors};
+ const report={id,result,nativeRunner,aborted,chat,ended,missingSessionRoute,quotaResults,replayChatResults,chatFrameVariantResults,requests,errors};
  fs.writeFileSync('test-results/browser-smoke.json',JSON.stringify(report,null,2));
  console.log(JSON.stringify(report,null,2));
  await popup.screenshot({path:'test-results/popup.png',fullPage:true});

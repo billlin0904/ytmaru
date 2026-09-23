@@ -9027,7 +9027,20 @@ function Ds(e = "") {
       ...h.map((e) => ({ node: e, message: o(e) })),
       ...p.map((e) => ({ node: e, message: u(e) })),
     ];
-  const chatUrls=[location.href,...Array.from(document.querySelectorAll('iframe[src]'),frame=>frame.getAttribute('src'))];
+  const visibleChatElement=node=>{
+    if(!node?.isConnected) return false;
+    const rect=node.getBoundingClientRect();
+    if(rect.width<=0||rect.height<=0||!node.getClientRects().length) return false;
+    for(let ancestor=node;ancestor;ancestor=ancestor.parentElement) {
+      if(ancestor.hidden||ancestor.hasAttribute('collapsed')||ancestor.getAttribute('aria-hidden')==='true') return false;
+      const style=ancestor.ownerDocument.defaultView.getComputedStyle(ancestor);
+      if(style.display==='none'||['hidden','collapse'].includes(style.visibility)) return false;
+    }
+    return true;
+  };
+  const chatContextVisible=window===window.top || visibleChatElement(window.frameElement);
+  const chatFrames=Array.from(document.querySelectorAll('iframe')).filter(visibleChatElement);
+  const chatUrls=chatContextVisible ? [location.href,...chatFrames.map(frame=>frame.getAttribute('src')).filter(Boolean)] : [];
   let chatReplay=false, youtubeChatFrame=false;
   for(const value of chatUrls) {
     try {
@@ -9039,8 +9052,9 @@ function Ds(e = "") {
     } catch {}
   }
   const onYouTube=location.hostname==='youtube.com'||location.hostname.endsWith('.youtube.com');
+  const embeddedYouTubeChat=chatFrames.some(frame=>frame.id==='chatframe' && !String(frame.getAttribute('src')||'').trim() && !String(frame.src||'').trim() && visibleChatElement(frame.closest('ytd-live-chat-frame')));
   return {
-    isLiveChatFrame: onYouTube ? youtubeChatFrame || Boolean(document.querySelector('yt-live-chat-app')) || g.length>0 : b,
+    isLiveChatFrame: onYouTube ? chatContextVisible && (youtubeChatFrame || embeddedYouTubeChat || Array.from(document.querySelectorAll('yt-live-chat-app')).some(visibleChatElement) || g.some(visibleChatElement)) : b,
     chatReplay,
     messages: (e
       ? SubruuLiveChat.trackSourceMessages(`${e}:${location.href}`, y)

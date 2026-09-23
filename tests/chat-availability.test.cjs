@@ -10,7 +10,9 @@ function between(start,end) {
 
 test('replay iframe is available even after finite VOD availability was cached false',()=>{
  let frames=[],live=false;
- const context=vm.createContext({URL,Date,location:{href:'https://www.youtube.com/watch?v=fixture'},le:{},ac:()=>true,Pd:()=>({isLiveStream:live,isYouTube:true}),document:{querySelectorAll:()=>frames.map(src=>({getAttribute:()=>src})),querySelector:()=>null}});
+ const window={};window.top=window;
+ const ownerDocument={defaultView:{getComputedStyle:()=>({display:'block',visibility:'visible'})}};
+ const context=vm.createContext({URL,Date,window,location:{href:'https://www.youtube.com/watch?v=fixture'},le:{},ac:()=>true,Pd:()=>({isLiveStream:live,isYouTube:true}),document:{querySelectorAll:selector=>selector==='iframe'?frames.map(src=>({isConnected:true,ownerDocument,getBoundingClientRect:()=>({width:300,height:200}),getClientRects:()=>[{}],hasAttribute:()=>false,getAttribute:attribute=>attribute==='src'?src:null})):[],querySelector:()=>null}});
  vm.runInContext(between('  function youtubeChatPresence()', '  function Ki()')+between('  function Ys()', '  function Xs('),context);
  assert.equal(context.Ys(),false);
  frames=['https://www.youtube.com/live_chat_replay?v=fixture'];

@@ -8873,14 +8873,30 @@
   }
   function youtubeChatPresence() {
     if(!ac()) return {available:false,replay:false};
-    const urls=[location.href,...Array.from(document.querySelectorAll('iframe[src]'),frame=>frame.getAttribute('src'))];
+    const visible=node=>{
+      if(!node?.isConnected) return false;
+      const rect=node.getBoundingClientRect();
+      if(rect.width<=0||rect.height<=0||!node.getClientRects().length) return false;
+      for(let ancestor=node;ancestor;ancestor=ancestor.parentElement) {
+        if(ancestor.hidden||ancestor.hasAttribute('collapsed')||ancestor.getAttribute('aria-hidden')==='true') return false;
+        const style=ancestor.ownerDocument.defaultView.getComputedStyle(ancestor);
+        if(style.display==='none'||['hidden','collapse'].includes(style.visibility)) return false;
+      }
+      return true;
+    };
+    // The live-chat iframe may be navigated without exposing a src attribute.
+    // Inspect only its visible embedding element; never read its document.
+    if(window!==window.top && !visible(window.frameElement)) return {available:false,replay:false};
+    const frames=Array.from(document.querySelectorAll('iframe')).filter(visible);
+    const urls=[location.href,...frames.map(frame=>frame.getAttribute('src')).filter(Boolean)];
     for(const value of urls) {
       try {
         const url=new URL(value,location.href);
         if((url.hostname==='youtube.com'||url.hostname.endsWith('.youtube.com')) && /^\/live_chat(?:_replay)?\/?$/.test(url.pathname)) return {available:true,replay:url.pathname.includes('_replay')};
       } catch {}
     }
-    return {available:Boolean(document.querySelector('yt-live-chat-app')),replay:false};
+    const embedded=frames.some(frame=>frame.id==='chatframe' && !String(frame.getAttribute('src')||'').trim() && !String(frame.src||'').trim() && visible(frame.closest('ytd-live-chat-frame')));
+    return {available:embedded || Array.from(document.querySelectorAll('yt-live-chat-app')).some(visible),replay:false};
   }
   function isChatReplay() {
     const chat=youtubeChatPresence();
