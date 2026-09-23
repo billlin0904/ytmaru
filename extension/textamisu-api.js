@@ -53,6 +53,24 @@
     if (!id || typeof id !== "string") throw new Error("缺少 Textamisu session ID。");
     return `/live-sessions/${encodeURIComponent(id)}`;
   }
+  function responseDiagnostic(method, path, contentType) {
+    // Never include the configured URL, query, user identifiers, or arbitrary
+    // response headers/body in a diagnostic shown by the popup/content script.
+    const type = String(contentType || "").split(";")[0].trim().toLowerCase();
+    const allowedTypes = ["application/json", "application/problem+json", "text/html", "text/plain", "application/octet-stream"];
+    const safeType = allowedTypes.includes(type) ? type : type ? "other" : "missing";
+    const route = ["/credits", "/live-sessions"].includes(path) ? path
+      : /^\/live-sessions\/[^/]+\/operations\/[^/]+$/.test(path) ? "/live-sessions/:id/operations/:requestId"
+      : /^\/live-sessions\/[^/]+\/(stt|translate|chat-translate|end)$/.test(path) ? "/live-sessions/:id/" + path.split("/").at(-1)
+      : /^\/live-sessions\/[^/]+$/.test(path) ? "/live-sessions/:id" : "unknown-route";
+    return { method: ["GET", "POST"].includes(method) ? method : "OTHER", route, contentType: safeType };
+  }
+  function responseError(status, diagnostic, code, message, token = "") {
+    const error = apiError(status, { code, message }, token);
+    error.message += `（${diagnostic.method} ${diagnostic.route}；HTTP ${status}；Content-Type: ${diagnostic.contentType}）`;
+    error.data = { ...error.data, ...diagnostic };
+    return error;
+  }
   async function request(path, { method = "GET", body, signal, timeoutMs = 45000 } = {}) {
     const config = await getConfig();
     if (!config.token) throw apiError(401, { code: "token_missing" });
@@ -77,11 +95,18 @@
         if (!signal?.aborted && error && typeof error === "object") error.transportError = true;
         throw error;
       }
+      const diagnostic = responseDiagnostic(method, path, response.headers.get("content-type"));
       let data;
-      try { data = raw ? JSON.parse(raw) : {}; }
-      catch { throw apiError(response.status, { code: "invalid_json", message: "Textamisu API 未回傳 JSON。" }); }
+      try { data = JSON.parse(raw); }
+      catch {
+        const message = response.status === 404 ? "Textamisu API 路徑回傳 404；請確認 API 網址與直播 API 是否已部署。"
+          : [502, 503].includes(response.status) ? "Textamisu API 閘道或後端暫時無法使用。"
+          : response.ok && diagnostic.contentType === "text/html" ? "Textamisu API 回傳網頁而非 JSON；請確認 API 網址與後端部署版本。"
+          : "Textamisu API 未回傳有效 JSON；請確認 API 網址與回應格式。";
+        throw responseError(response.status, diagnostic, "invalid_json", message, config.token);
+      }
       if (!response.ok) throw apiError(response.status, data, config.token);
-      return { status: response.status, data, retryAfter: Math.min(5000, Math.max(250, Number(response.headers.get("retry-after")) * 1000 || 750)) };
+      return { status: response.status, data, diagnostic, retryAfter: Math.min(5000, Math.max(250, Number(response.headers.get("retry-after")) * 1000 || 750)) };
     } finally { clearTimeout(timer); signal?.removeEventListener("abort", abort); }
   }
   async function pause(ms, signal) {
@@ -111,14 +136,17 @@
     return { ...options, timeoutMs: Math.min(Number(options.timeoutMs) || 45000, remaining) };
   }
   function ambiguous(error, options) {
-    return !options.signal?.aborted && (error.transportError || error.name === "TimeoutError" || [502, 503].includes(error.status));
+    return !options.signal?.aborted && (error.transportError || error.name === "TimeoutError" || [502, 503].includes(error.status)
+      || (error.code === "invalid_json" && error.status >= 200 && error.status < 300));
   }
   async function lookupOperation(sessionId, requestId, options, deadline, allowMissing = false) {
     for (;;) {
       try {
         return await request(`${sessionPath(sessionId)}/operations/${encodeURIComponent(requestId)}`, budgetOptions(options, deadline, requestId));
       } catch (error) {
-        if (allowMissing && error.status === 404) return null;
+        // An HTML 404 or generic proxy 404 does not prove the charged operation
+        // is absent. Only this explicit backend JSON code allows resubmission.
+        if (allowMissing && error.status === 404 && error.code === "operation_not_found") return null;
         if (!ambiguous(error, options)) throw error;
         await pause(Math.min(750, Math.max(1, deadline - Date.now())), options.signal);
       }
@@ -196,7 +224,13 @@
   globalThis.TextamisuApi = Object.freeze({
     CONFIG_KEY, TOKEN_KEY, DEFAULT_BASE_URL, normalizeBaseUrl, language, getConfig, saveConfig, clearToken,
     credits: async (options = {}) => (await request("/credits", options)).data,
-    startSession: async (options = {}) => (await request("/live-sessions", { ...options, method: "POST", body: {} })).data,
+    startSession: async (options = {}) => {
+      const response = await request("/live-sessions", { ...options, method: "POST", body: {} });
+      if (typeof response.data?.sessionId !== "string" || !response.data.sessionId.trim()) {
+        throw responseError(response.status, response.diagnostic, "invalid_session_response", "Textamisu API 未回傳有效的工作階段 ID；請確認直播 API 是否已部署。");
+      }
+      return response.data;
+    },
     session: async (id, options = {}) => (await request(sessionPath(id), options)).data,
     endSession: async (id, options = {}) => (await request(`${sessionPath(id)}/end`, { ...options, method: "POST", body: {} })).data,
     stt, translate, chatTranslate, operation,

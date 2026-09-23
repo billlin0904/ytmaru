@@ -10,7 +10,7 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
  const context=await chromium.launchPersistentContext(path.join(fixture,'profile'),{channel:process.env.YTMARU_BROWSER_CHANNEL||'chromium',headless:true,args:['--disable-extensions-except='+extension,'--load-extension='+extension]});
  try {
  fs.mkdirSync('test-results',{recursive:true}); const requests=[],errors=[],quotaResults=[];
- let balanceFixture=null;
+ let balanceFixture=null,missingSessionFixture=false;
  const billing={rates:{sttCreditsPerMinute:1,captionCreditsPerMinute:1,chatInputCharactersPerCredit:1000},usage:{sttMs:1000,captionMs:1000,chatCharacters:0},chargedCredits:2,availableCredits:98,reservedCredits:0};
  context.on('page',tab=>tab.on('pageerror',error=>errors.push(`${tab.url()}: ${error.message}`)));
  // Deny any unmocked network request. The browser fixture must never contact a
@@ -18,6 +18,11 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
  await context.route(/^https?:\/\//,route=>route.abort('blockedbyclient'));
  await context.route('https://textamisu.com/**', async route=>{
   const request=route.request(),url=new URL(request.url()); requests.push({method:request.method(),path:url.pathname});
+  if(missingSessionFixture&&request.method()==='POST'&&url.pathname.endsWith('/live-sessions')){
+   // Express-style HTML is deliberately not JSON. Include private-looking
+   // fixture text so the assertion also catches accidental response-body leaks.
+   await route.fulfill({status:404,contentType:'text/html; charset=utf-8',body:'<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Error</title></head><body><pre>Cannot POST /api/agent/v1/live-sessions</pre><!-- DO_NOT_EXPOSE_RESPONSE_BODY pt_sk_fixture_only --></body></html>'});return;
+  }
   const current=balanceFixture;
   const balanceRequest=request.method()==='GET'&&(url.pathname.endsWith('/credits')||url.pathname.endsWith('/'+current?.remoteId));
   if(current&&balanceRequest){current.requests++;await current.gate;}
@@ -71,6 +76,42 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
  assert.equal(ended.ok,true);
  assert.equal(requests.filter(r=>r.path.endsWith('/live-sessions')).length,1);
  await page.close();await video.close();
+
+ // Exercise the real offscreen startup -> runtime message -> worker -> API
+ // path with a missing deployment route. Do not call the API directly or
+ // replace the production startup function with a test-only implementation.
+ missingSessionFixture=true;
+ const missingStartIndex=requests.length;
+ const missingCapture=await context.newPage();
+ await missingCapture.goto(`chrome-extension://${id}/offscreen.html`);
+ await worker.evaluate(async()=>{
+  const [tab]=await chrome.tabs.query({url:chrome.runtime.getURL('offscreen.html')});
+  __ytmaruSeedSessions([{sessionId:'qa-missing-route',tabId:tab.id,sourceTabId:tab.id,displayTabId:tab.id,config:{}}]);
+ });
+ const missingSessionRoute=await missingCapture.evaluate(async()=>{
+  gc.sessionId='qa-missing-route';gc.isStopping=false;gc.stopRequestedAtMs=0;
+  gc.config=PP({sourceLang:'eng',targetLang:'zh'});
+  gc.remoteSessionStarted=false;gc.remoteSessionStartPromise=null;
+  try {await Tx();return {ok:true,remoteSessionStarted:gc.remoteSessionStarted};}
+  catch(error){return {ok:false,message:error.message,status:error.status,remoteSessionStarted:gc.remoteSessionStarted};}
+ });
+ assert.equal(missingSessionRoute.ok,false);
+ assert.equal(missingSessionRoute.status,404);
+ assert.equal(missingSessionRoute.remoteSessionStarted,false);
+ assert.match(missingSessionRoute.message,/POST \/live-sessions/);
+ assert.match(missingSessionRoute.message,/HTTP 404/);
+ assert.match(missingSessionRoute.message,/Content-Type: text\/html/);
+ assert.match(missingSessionRoute.message,/路徑回傳 404/);
+ assert.match(missingSessionRoute.message,/請確認 API 網址與直播 API 是否已部署/);
+ assert.doesNotMatch(JSON.stringify(missingSessionRoute),/<!DOCTYPE|<html|Cannot POST|DO_NOT_EXPOSE_RESPONSE_BODY|pt_sk_|Bearer/);
+ const missingPosts=requests.slice(missingStartIndex).filter(request=>request.method==='POST');
+ assert.deepEqual(missingPosts,[{method:'POST',path:'/api/agent/v1/live-sessions'}],'a failed session start must not retry creation or send STT/chat/translation');
+ const missingRemote=await worker.evaluate(async()=>{
+  __ytmaruSeedSessions([]);
+  return (await chrome.storage.session.get('textamisuLive:qa-missing-route'))['textamisuLive:qa-missing-route']||null;
+ });
+ assert.equal(missingRemote,null,'failed creation must not persist a usable remote session');
+ await missingCapture.close();missingSessionFixture=false;
 
  async function waitUntil(check,label,timeout=5000){
   const deadline=Date.now()+timeout;
@@ -151,7 +192,7 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
  assert.equal(await popup.locator('#statusLabel').innerText(),'待命');
  assert.equal(await popup.locator('#authState').innerText(),'已連線');
  assert.equal(await popup.locator('#accountBalance').innerText(),'100');
- const report={id,result,chat,ended,quotaResults,requests,errors};
+ const report={id,result,chat,ended,missingSessionRoute,quotaResults,requests,errors};
  fs.writeFileSync('test-results/browser-smoke.json',JSON.stringify(report,null,2));
  console.log(JSON.stringify(report,null,2));
  await popup.screenshot({path:'test-results/popup.png',fullPage:true});
