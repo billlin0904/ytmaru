@@ -1,0 +1,93 @@
+{
+  "action": {
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    },
+    "default_popup": "popup.html",
+    "default_title": "ytmaru · Textamisu"
+  },
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "mse-audio-hook.js"
+      ],
+      "matches": [
+        "https://youtube.com/*",
+        "https://www.youtube.com/*",
+        "https://*.youtube.com/*",
+        "https://missav.ai/*",
+        "https://*.missav.ai/*",
+        "https://missav.ws/*",
+        "https://*.missav.ws/*",
+        "https://xvideos.com/*",
+        "https://www.xvideos.com/*",
+        "https://*.xvideos.com/*"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
+  "default_locale": "zh_TW",
+  "description": "AI live subtitle translation for YouTube, Twitch, Instagram, and HTML5 videos.",
+  "homepage_url": "https://github.com/billlin0904/ytmaru",
+  "host_permissions": [
+    "https://youtube.com/*",
+    "https://www.youtube.com/*",
+    "https://*.youtube.com/*",
+    "https://youtu.be/*",
+    "https://missav.ai/*",
+    "https://*.missav.ai/*",
+    "https://missav.ws/*",
+    "https://*.missav.ws/*",
+    "https://xvideos.com/*",
+    "https://www.xvideos.com/*",
+    "https://*.xvideos.com/*",
+    "https://*.twitch.tv/*",
+    "https://usher.ttvnw.net/*",
+    "https://*.ttvnw.net/*",
+    "https://*.hls.live-video.net/*",
+    "https://*.instagram.com/*",
+    "https://*.cdninstagram.com/*",
+    "https://*.fbcdn.net/*",
+    "https://*.fbsbx.com/*",
+    "https://*.facebook.com/*",
+    "https://textamisu.com/*"
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "manifest_version": 3,
+  "minimum_chrome_version": "116",
+  "name": "ytmaru · Textamisu",
+  "optional_host_permissions": [
+    "https://*.googlevideo.com/*",
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "permissions": [
+    "activeTab",
+    "declarativeNetRequest",
+    "offscreen",
+    "scripting",
+    "storage",
+    "tabCapture",
+    "tabs",
+    "webRequest"
+  ],
+  "short_name": "ytmaru",
+  "version": "0.2.0"
+}

@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live Subtitle Mirror Viewer</title>
+    <link rel="stylesheet" href="mirror-viewer.css" />
+  </head>
+  <body>
+    <main class="mirror-shell">
+      <video
+        id="mirrorVideo"
+        class="mirror-video"
+        autoplay
+        playsinline
+        controls
+        controlslist="nofullscreen"
+      ></video>
+      <section
+        id="subtitlePanel"
+        class="subtitle-window single-line-mode"
+        role="region"
+        aria-label="AI live subtitle"
+      >
+        <div id="subtitleToolbar" class="toolbar">
+          <button
+            id="stopButton"
+            class="close-button"
+            data-action="close"
+            type="button"
+            title="關閉字幕"
+            aria-label="關閉字幕"
+          >
+            ×</button
+          ><span class="status-pill"
+            ><span class="vu" aria-hidden="true"><i></i><i></i><i></i></span
+            ><span id="statusText" class="status">…</span></span
+          ><button
+            id="usageToggleButton"
+            class="quota"
+            data-action="usage-toggle"
+            data-balance-field="summary"
+            type="button"
+            title="本次字幕估算額度"
+            aria-expanded="false"
+          >
+            剩餘額度讀取中</button
+          ><span class="tb-sep" aria-hidden="true"></span>
+          <div class="font-control" role="group" aria-label="字體大小">
+            <button
+              id="fontDownButton"
+              data-action="font-down"
+              type="button"
+              title="縮小字體"
+              aria-label="縮小字體"
+            >
+              A−</button
+            ><span
+              id="fontSizeDisplay"
+              class="font-size-display"
+              title="目前字體大小"
+              >28</span
+            ><button
+              id="fontUpButton"
+              data-action="font-up"
+              type="button"
+              title="放大字體"
+              aria-label="放大字體"
+            >
+              A+
+            </button>
+          </div>
+          <button
+            id="opacityButton"
+            data-action="opacity"
+            type="button"
+            title="調整背景明暗"
+          >
+            深淺</button
+          ><button
+            id="transparentButton"
+            data-action="transparent-toggle"
+            type="button"
+            title="透明模式：滑鼠移開只留字幕"
+            aria-pressed="false"
+          >
+            透明</button
+          ><button
+            id="fullscreenButton"
+            data-action="fullscreen-toggle"
+            type="button"
+            title="全螢幕顯示影片與字幕"
+            aria-label="全螢幕顯示影片與字幕"
+            aria-pressed="false"
+          >
+            全螢幕</button
+          ><span class="tb-sep" aria-hidden="true"></span
+          ><button
+            id="modeButton"
+            data-action="mode"
+            type="button"
+            title="切換原文/翻譯/大視窗/旁側長條"
+          >
+            雙語</button
+          ><button
+            id="chatToggleButton"
+            data-action="chat-toggle"
+            type="button"
+            title="直播聊天：留言翻譯與寫回覆"
+          >
+            聊天</button
+          ><span class="tb-sep" aria-hidden="true"></span
+          ><button
+            id="settingsToggleButton"
+            data-action="settings-toggle"
+            type="button"
+            title="字幕外觀設定"
+            aria-expanded="false"
+            aria-label="字幕外觀設定"
+          >
+            設定</button
+          ><button
+            id="collapseButton"
+            data-action="collapse"
+            type="button"
+            title="縮小字幕匡"
+            aria-label="縮小字幕匡"
+          >
+            -
+          </button>
+        </div>
+        <aside id="usagePanel" class="usage-panel" aria-live="polite">
+          <div class="usage-panel-title">本次用量估算</div>
+
+          <div class="usage-section">
+            <div class="usage-section-head">帳戶剩餘額度</div>
+            <dl class="usage-grid">
+              <div class="usage-row">
+                <dt>剩餘額度</dt>
+                <dd data-balance-field="balance">讀取中</dd>
+              </div>
+              <div class="usage-row primary">
+                <dt>預估可用時間</dt>
+                <dd data-balance-field="time">計算中</dd>
+              </div>
+              <div class="usage-row">
+                <dt>目前模式</dt>
+                <dd data-balance-field="rate">--</dd>
+              </div>
+            </dl>
+            <div class="usage-note" data-balance-field="note"></div>
+          </div>
+          <div class="usage-section">
+            <div class="usage-section-head">本次用量</div>
+            <dl class="usage-grid">
+              <div class="usage-row primary">
+                <dt>slow_credit</dt>
+                <dd data-usage-field="credits">0</dd>
+              </div>
+              <div class="usage-row" data-wallet-usage-row hidden>
+                <dt>錢包扣款</dt>
+                <dd data-usage-field="walletCharges"></dd>
+              </div>
+              <div class="usage-row" data-pass-status-row hidden>
+                <dt>吃到飽</dt>
+                <dd data-usage-field="passStatus"></dd>
+              </div>
+              <div class="usage-row primary">
+                <dt>USD</dt>
+                <dd data-usage-field="usd">$0</dd>
+              </div>
+              <div class="usage-row" data-dev-only="true" hidden>
+                <dt>字幕額度</dt>
+                <dd data-usage-field="subtitleUsage">0 credits / $0</dd>
+              </div>
+              <div class="usage-row" data-dev-only="true" hidden>
+                <dt>聊天室額度</dt>
+                <dd data-usage-field="chatUsage">0 credits / $0</dd>
+              </div>
+              <div class="usage-row" data-dev-only="true" hidden>
+                <dt>回覆額度</dt>
+                <dd data-usage-field="replyUsage">0 credits / $0</dd>
+              </div>
+              <div class="usage-row" data-dev-only="true" hidden>
+                <dt>開啟時間</dt>
+                <dd data-usage-field="elapsed">0s</dd>
+              </div>
+            </dl>
+          </div>
+          <div class="usage-section">
+            <div class="usage-section-head">STT 引擎</div>
+            <dl class="usage-grid">
+              <div class="usage-row">
+                <dt>STT</dt>
+                <dd data-usage-field="stt">0s / $0 / 0 credits</dd>
+              </div>
+              <div class="usage-row" data-dev-only="true" hidden>
+                <dt>VAD</dt>
+                <dd data-usage-field="vad">off</dd>
+              </div>
+            </dl>
+          </div>
+          <div class="usage-section">
+            <div class="usage-section-head">翻譯</div>
+            <dl class="usage-grid">
+              <div class="usage-row">
+                <dt>LLM</dt>
+                <dd data-usage-field="llm">
+                  0 tokens / 0 calls / $0 / 0 credits
+                </dd>
+              </div>
+              <div class="usage-row" data-dev-only="true" hidden>
+                <dt>Batch</dt>
+                <dd data-usage-field="batch">off</dd>
+              </div>
+              <div class="usage-row" data-dev-only="true" hidden>
+                <dt>Provider</dt>
+                <dd data-usage-field="provider">-</dd>
+              </div>
+              <div class="usage-row" data-dev-only="true" hidden>
+                <dt>期限救援</dt>
+                <dd data-usage-field="fallback">0 次 / $0 / 0 credits</dd>
+              </div>
+              <div class="usage-row" data-dev-only="true" hidden>
+                <dt>故障切備援</dt>
+                <dd data-usage-field="providerErrorRescue">
+                  0 次 / $0 / 0 credits
+                </dd>
+              </div>
+            </dl>
+          </div>
+          <div class="usage-section" data-dev-only="true" hidden>
+            <div class="usage-section-head">Token 明細</div>
+            <dl class="usage-grid">
+              <div class="usage-row">
+                <dt>Input</dt>
+                <dd data-usage-field="input">0 tokens / $0 / 0 credits</dd>
+              </div>
+              <div class="usage-row">
+                <dt>Output billed</dt>
+                <dd data-usage-field="output">0 tokens / $0 / 0 credits</dd>
+              </div>
+              <div class="usage-row">
+                <dt>Visible output</dt>
+                <dd data-usage-field="visibleOutput">
+                  0 tokens / $0 / 0 credits
+                </dd>
+              </div>
+              <div class="usage-row">
+                <dt>Thinking</dt>
+                <dd data-usage-field="thinking">0 tokens / $0 / 0 credits</dd>
+              </div>
+            </dl>
+          </div>
+          <div class="usage-section" data-dev-only="true" hidden>
+            <div class="usage-section-head">運行狀態</div>
+            <dl class="usage-grid">
+              <div class="usage-row">
+                <dt>字幕流</dt>
+                <dd data-usage-field="pipeline">等待樣本</dd>
+              </div>
+              <div class="usage-row">
+                <dt>字幕緩衝</dt>
+                <dd data-usage-field="subtitleBuffer">未播 0 段</dd>
+              </div>
+              <div class="usage-row">
+                <dt>延遲</dt>
+                <dd data-usage-field="latency">等待樣本</dd>
+              </div>
+              <div class="usage-row">
+                <dt>更新</dt>
+                <dd data-usage-field="source">本機估算</dd>
+              </div>
+            </dl>
+          </div>
+          <p class="usage-note">1 USD = 100,000 slow_credit。</p>
+          <p class="usage-note" data-dev-only="true" hidden>
+            Thinking 會併入 output billed
+            成本；字幕、聊天室與回覆分項僅供開發者觀察。
+          </p>
+        </aside>
+        <aside
+          id="settingsPanel"
+          class="settings-panel"
+          aria-live="polite"
+          aria-label="字幕外觀設定"
+        >
+          <div class="settings-title">字幕外觀</div>
+          <div class="settings-sub">所有變更會即時套用並保存。</div>
+          <label class="settings-field"
+            ><span class="settings-label">顯示模式</span
+            ><select data-settings="mode">
+              <option value="dual">原文 + 翻譯</option>
+              <option value="translation">只顯示翻譯</option>
+              <option value="original">只顯示原文</option>
+              <option value="large">長文隊列</option>
+              <option value="side">旁側長條</option>
+            </select></label
+          >
+          <div class="settings-field">
+            <div class="settings-label">
+              <span>字體大小</span
+              ><span class="settings-value" data-settings-value="fontSize"
+                >28 px</span
+              >
+            </div>
+            <input
+              class="settings-slider"
+              type="range"
+              min="18"
+              max="84"
+              step="1"
+              data-settings="fontSize"
+            />
+          </div>
+          <label class="settings-field"
+            ><span class="settings-label">字體</span
+            ><select data-settings="fontFamily">
+              <option value="system">系統字體</option>
+              <option value="noto-sans">Noto Sans</option>
+              <option value="source-han">思源黑體</option>
+              <option value="rounded">圓體</option>
+              <option value="serif">明體 / 襯線</option>
+              <option value="mono">等寬字體</option></select
+            ><span
+              id="fontPreview"
+              class="settings-font-preview"
+              aria-hidden="true"
+              >字幕翻譯範例 · Subtitle Preview · 1234</span
+            ></label
+          ><label class="settings-toggle"
+            ><span class="settings-toggle-text"
+              ><span class="settings-toggle-title">雙語字體大小一致</span
+              ><span class="settings-toggle-desc"
+                >原文與翻譯使用同樣大小</span
+              ></span
+            ><span class="settings-switch"
+              ><input
+                type="checkbox"
+                data-settings="equalBilingualFontSize" /><span
+                class="settings-switch-track"
+                aria-hidden="true"
+              ></span></span
+          ></label>
+          <div class="settings-field">
+            <div class="settings-label">
+              <span>背景深度</span
+              ><span class="settings-value" data-settings-value="opacity"
+                >94%</span
+              >
+            </div>
+            <input
+              class="settings-slider"
+              type="range"
+              min="0"
+              max="0.98"
+              step="0.02"
+              data-settings="opacity"
+            />
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label settings-color-label">原文字色</div>
+              <label class="settings-color-row"
+                ><input
+                  type="color"
+                  data-settings="originalColor"
+                  value="#d8e2f2"
+                /><span
+                  class="settings-color-hex"
+                  data-settings-value="originalColor"
+                  >#d8e2f2</span
+                ></label
+              >
+            </div>
+            <div>
+              <div class="settings-label settings-color-label">翻譯字色</div>
+              <label class="settings-color-row"
+                ><input
+                  type="color"
+                  data-settings="translationColor"
+                  value="#ffffff"
+                /><span
+                  class="settings-color-hex"
+                  data-settings-value="translationColor"
+                  >#ffffff</span
+                ></label
+              >
+            </div>
+          </div>
+          <div class="settings-actions">
+            <button
+              id="settingsResetButton"
+              class="settings-reset-button"
+              data-action="settings-reset"
+              type="button"
+            >
+              重設預設值
+            </button>
+          </div>
+        </aside>
+        <div class="body">
+          <div
+            id="subtitleLines"
+            class="subtitle-lines"
+            aria-live="polite"
+          ></div>
+          <p id="originalText" class="original">等待語音...</p>
+          <p id="translationText" class="translation">翻譯會顯示在這裡</p>
+          <div id="largeLines" class="large-lines" aria-live="polite"></div>
+          <div
+            id="subtitleMeasure"
+            class="subtitle-measure"
+            aria-hidden="true"
+          ></div>
+        </div>
+        <span id="resizeHandle" class="resize-handle" aria-hidden="true"></span>
+      </section>
+      <section
+        id="interactionPanel"
+        class="interaction-window"
+        role="dialog"
+        aria-label="直播聊天翻譯"
+      >
+        <div id="interactionHeader" class="interaction-header">
+          <div>
+            <div class="interaction-title">直播聊天</div>
+            <div class="interaction-subtitle">
+              留言翻譯，也可以翻譯想回覆的內容
+            </div>
+          </div>
+          <div class="interaction-header-actions">
+            <button
+              id="replyToggleButton"
+              class="interaction-mini-button"
+              data-action="reply-toggle-inline"
+              type="button"
+              title="展開回覆翻譯"
+              aria-expanded="false"
+            >
+              寫回覆</button
+            ><button
+              id="chatCloseButton"
+              class="close-button"
+              data-action="interaction-close"
+              type="button"
+              title="關閉直播聊天"
+              aria-label="關閉直播聊天"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+        <div class="interaction-content">
+          <section
+            id="chatPanel"
+            class="live-chat-window"
+            role="region"
+            aria-label="直播留言翻譯"
+          >
+            <div class="live-chat-header">
+              <div class="live-chat-title">留言翻譯</div>
+              <div class="live-chat-header-actions">
+                <button
+                  id="chatBottomButton"
+                  class="live-chat-scroll-bottom"
+                  data-action="chat-scroll-bottom"
+                  type="button"
+                  title="回到最新聊天室翻譯"
+                  hidden
+                >
+                  到底</button
+                ><span class="live-chat-batch-note">2s 批次翻譯</span>
+              </div>
+            </div>
+            <div id="chatList" class="live-chat-list" aria-live="polite"></div>
+            <div id="chatStatus" class="live-chat-status">
+              直播留言翻譯會顯示在這裡
+            </div>
+          </section>
+          <section
+            id="replyPanel"
+            class="reply-window"
+            role="region"
+            aria-label="直播回覆翻譯"
+          >
+            <div class="reply-header">
+              <div>
+                <div class="reply-title">回覆翻譯</div>
+                <div id="replyTarget" class="reply-target">目標語言：-</div>
+              </div>
+            </div>
+            <textarea
+              id="replyInput"
+              class="reply-input"
+              rows="3"
+              placeholder="輸入想回覆的內容"
+            ></textarea>
+            <p id="replyOutput" class="reply-output">翻譯結果會顯示在這裡</p>
+            <div class="reply-actions">
+              <button
+                id="replyTranslateButton"
+                data-action="reply-translate"
+                type="button"
+              >
+                翻譯</button
+              ><button
+                id="replySendButton"
+                data-action="reply-send"
+                type="button"
+              >
+                翻譯並送出</button
+              ><button
+                id="replyCopyButton"
+                data-action="reply-copy"
+                type="button"
+              >
+                複製
+              </button>
+            </div>
+            <div id="replyStatus" class="reply-status">
+              輸入文字後翻譯成創作者語言
+            </div>
+          </section>
+        </div>
+        <span
+          id="interactionResizeHandle"
+          class="interaction-resize-handle"
+          aria-hidden="true"
+        ></span>
+      </section>
+    </main>
+    <script src="vendor/hls.min.js"></script>
+    <script src="vendor/shaka-player.compiled.js"></script>
+    <script src="wallet-interactions.js"></script>
+    <script src="live-chat-shared.js"></script>
+    <script src="caption-balance-display.js"></script>
+    <script src="mirror-viewer.js"></script>
+  </body>
+</html>

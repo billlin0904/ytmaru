@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ytmaru</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main
+      id="popupPanel"
+      class="app"
+      data-testid="popup-root"
+      data-ui-mode="user"
+      data-auth-state="signed-in"
+    >
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">y</span>
+          <div class="brand-text">
+            <h1 class="brand-name">ytmaru</h1>
+            <p class="brand-tag mono">Textamisu 即時字幕</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button
+            id="uiLanguageToggle"
+            class="ui-language-toggle mono"
+            type="button"
+            aria-label="Switch to English"
+            title="Switch to English"
+          >
+            EN</button
+          ><span
+            id="statusPill"
+            class="status-pill idle"
+            data-testid="popup-status"
+            role="status"
+            aria-live="polite"
+            ><span class="vu" aria-hidden="true"><i></i><i></i><i></i></span
+            ><span id="statusLabel" class="status-label" data-i18n="statusIdle"
+              >待命</span
+            ></span
+          >
+        </div>
+      </header>
+      <section
+        id="extensionUpdateBanner"
+        class="extension-update-banner"
+        role="status"
+        aria-live="polite"
+        hidden
+      >
+        <div class="extension-update-copy">
+          <strong id="extensionUpdateTitle" data-i18n="extensionUpdateTitle"
+            >新版插件可用</strong
+          ><span id="extensionUpdateDescription">目前版本可更新。</span>
+        </div>
+        <div class="extension-update-actions">
+          <button
+            id="extensionUpdateButton"
+            class="btn btn-primary"
+            type="button"
+            data-i18n="extensionUpdateButton"
+          >
+            下載新版</button
+          ><button
+            id="extensionUpdateDismissButton"
+            class="extension-update-dismiss"
+            type="button"
+            aria-label="稍後提醒"
+            data-i18n-aria-label="extensionUpdateDismiss"
+          >
+            ×
+          </button>
+        </div>
+      </section>
+      <section
+        class="hero"
+        aria-label="字幕控制"
+        data-i18n-aria-label="captionControlsAria"
+      >
+        <div class="lang-pair">
+          <div class="lang-cell" data-lang-cell="source">
+            <span class="field-tag" data-i18n="sourceLanguage">來源</span
+            ><button
+              id="sourceLangTrigger"
+              type="button"
+              class="lang-trigger"
+              data-testid="source-language-trigger"
+              data-combobox-trigger="source"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="sourceLangPanel"
+            >
+              <span
+                class="lang-trigger-label"
+                id="sourceLangTriggerLabel"
+
+                >自動偵測</span
+              ><span class="lang-trigger-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div
+              id="sourceLangPanel"
+              class="lang-panel"
+              data-combobox-panel="source"
+              role="dialog"
+              aria-label="選擇來源語言"
+              data-i18n-aria-label="chooseSourceLanguage"
+              hidden
+            >
+              <div class="lang-panel-search-wrap">
+                <span class="lang-panel-search-icon" aria-hidden="true">⌕</span
+                ><input
+                  id="sourceLangSearch"
+                  type="search"
+                  class="lang-panel-search"
+                  placeholder="搜尋語言、代碼或英文名"
+                  data-i18n-placeholder="searchLanguages"
+                  aria-label="搜尋來源語言"
+                  data-i18n-aria-label="searchSourceLanguage"
+                  autocomplete="off"
+                  spellcheck="false"
+                /><button
+                  id="sourceLangSearchClear"
+                  type="button"
+                  class="lang-panel-search-clear"
+                  aria-label="清除搜尋"
+                  data-i18n-aria-label="clearSearch"
+                  hidden
+                >
+                  ×
+                </button>
+              </div>
+              <div class="lang-panel-meta">
+                <span class="lang-panel-count mono" id="sourceLangCount"
+                  >--</span
+                >
+              </div>
+              <ul
+                id="sourceLangList"
+                class="lang-panel-list"
+                role="listbox"
+                aria-label="來源語言"
+                data-i18n-aria-label="sourceLanguageList"
+              ></ul>
+              <p
+                id="sourceLangEmpty"
+                class="lang-panel-empty"
+                data-i18n="languageNotFound"
+                hidden
+              >
+                找不到符合的語言。試試其他關鍵字。
+              </p>
+            </div>
+            <select
+              id="sourceLang"
+              class="lang-select visually-hidden"
+              aria-hidden="true"
+              tabindex="-1"
+            ><option value="auto">自動偵測</option>
+<option value="zh">繁體中文</option>
+<option value="eng">英語 / English</option>
+<option value="jpn">日語 / 日本語</option>
+<option value="kor">韓語 / 한국어</option>
+<option value="tha">泰語 / ไทย</option></select>
+          </div>
+          <span class="lang-arrow" aria-hidden="true">→</span>
+          <div class="lang-cell" data-lang-cell="target">
+            <span class="field-tag" data-i18n="translateTo">翻譯成</span
+            ><button
+              id="targetLangTrigger"
+              type="button"
+              class="lang-trigger"
+              data-testid="target-language-trigger"
+              data-combobox-trigger="target"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="targetLangPanel"
+            >
+              <span
+                class="lang-trigger-label"
+                id="targetLangTriggerLabel"
+                data-i18n="traditionalChinese"
+                >繁體中文 / Traditional Chinese</span
+              ><span class="lang-trigger-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div
+              id="targetLangPanel"
+              class="lang-panel"
+              data-combobox-panel="target"
+              role="dialog"
+              aria-label="選擇目標語言"
+              data-i18n-aria-label="chooseTargetLanguage"
+              hidden
+            >
+              <div class="lang-panel-search-wrap">
+                <span class="lang-panel-search-icon" aria-hidden="true">⌕</span
+                ><input
+                  id="targetLangSearch"
+                  type="search"
+                  class="lang-panel-search"
+                  placeholder="搜尋語言、代碼或英文名"
+                  data-i18n-placeholder="searchLanguages"
+                  aria-label="搜尋目標語言"
+                  data-i18n-aria-label="searchTargetLanguage"
+                  autocomplete="off"
+                  spellcheck="false"
+                /><button
+                  id="targetLangSearchClear"
+                  type="button"
+                  class="lang-panel-search-clear"
+                  aria-label="清除搜尋"
+                  data-i18n-aria-label="clearSearch"
+                  hidden
+                >
+                  ×
+                </button>
+              </div>
+              <div class="lang-panel-meta">
+                <span class="lang-panel-count mono" id="targetLangCount"
+                  >--</span
+                >
+              </div>
+              <ul
+                id="targetLangList"
+                class="lang-panel-list"
+                role="listbox"
+                aria-label="目標語言"
+                data-i18n-aria-label="targetLanguageList"
+              ></ul>
+              <p
+                id="targetLangEmpty"
+                class="lang-panel-empty"
+                data-i18n="languageNotFound"
+                hidden
+              >
+                找不到符合的語言。試試其他關鍵字。
+              </p>
+            </div>
+            <select
+              id="targetLang"
+              class="lang-select visually-hidden"
+              aria-hidden="true"
+              tabindex="-1"
+            ><option value="zh">繁體中文</option>
+<option value="eng">英語 / English</option>
+<option value="jpn">日語 / 日本語</option>
+<option value="kor">韓語 / 한국어</option>
+<option value="tha">泰語 / ไทย</option></select>
+          </div>
+        </div>
+        <div class="action-row">
+          <button
+            id="startButton"
+            class="btn btn-primary btn-lg"
+            data-testid="start-subtitles"
+            type="button"
+          >
+            <span class="btn-glyph" aria-hidden="true">▶</span
+            ><span
+              id="startButtonLabel"
+              class="btn-label"
+              data-i18n="startSubtitles"
+              >開始字幕</span
+            ></button
+          ><button
+            id="stopButton"
+            class="btn btn-ghost"
+            data-testid="stop-subtitles"
+            data-i18n="stopSubtitles"
+            type="button"
+          >
+            停止
+          </button>
+        </div>
+      </section>
+      <p
+        id="message"
+        class="status-message"
+        role="status"
+        aria-live="polite"
+      ></p>
+      <section class="account" aria-label="Textamisu API 設定">
+        <div class="account-row"><h2 class="card-title">Textamisu API</h2><span id="authState" class="tag tag-neutral">尚未設定</span></div>
+        <label class="input-field"><span class="input-label">API token</span>
+          <input id="textamisuToken" type="password" autocomplete="off" spellcheck="false" placeholder="pt_sk_…" aria-describedby="tokenStorageHint" />
+        </label>
+        <p id="tokenStorageHint" class="hint">Token 僅保留在本次瀏覽器工作階段，不會傳給影片網頁；重新開啟瀏覽器後需再輸入。</p>
+        <details><summary>API 網址</summary><label class="input-field"><span class="input-label">Textamisu Agent API</span>
+          <input id="textamisuBaseUrl" type="url" value="https://textamisu.com/api/agent/v1" autocomplete="off" spellcheck="false" />
+        </label></details>
+        <div class="action-row"><button id="saveTokenButton" type="button" class="btn btn-primary">儲存並驗證</button><button id="refreshCreditsButton" type="button" class="btn btn-ghost">更新額度</button><button id="clearTokenButton" type="button" class="btn btn-link">清除 token</button></div>
+        <p id="authEmailLabel" class="account-email"></p>
+        <div class="account-meters">
+          <div class="meter"><span class="meter-label">Textamisu 可用點數</span><strong id="accountBalance" class="meter-value mono">--</strong></div>
+          <span id="eligibleMinutes" hidden></span>
+          <span id="textMinutes" hidden></span>
+          <span id="outputMinutes" hidden></span>
+        </div><p id="accountHint" class="hint" role="status">輸入 Textamisu token 後即可開始。</p>
+      </section>
+      <p class="settings-hint">
+        <span data-i18n="overlaySettingsBefore"
+          >字幕的字體、配色、顯示模式請在字幕浮窗的</span
+        ><strong data-i18n="settingsButton">設定</strong
+        ><span data-i18n="overlaySettingsAfter">按鈕內調整。</span>
+      </p>
+      <div class="settings-head" id="settingsHead">
+        <span
+          class="settings-head-label"
+          id="settingsViewLabel"
+          data-i18n="quickSettings"
+          >快速設定</span
+        ><button
+          type="button"
+          class="gear-btn"
+          id="advancedToggle"
+          data-testid="toggle-advanced-settings"
+          aria-expanded="false"
+          aria-controls="advancedWrap"
+          title="進階設定"
+          data-i18n-title="advancedSettings"
+          aria-label="切換進階設定"
+          data-i18n-aria-label="toggleAdvancedSettings"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="3.4"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+            ></path>
+          </svg>
+        </button>
+      </div>
+      <section class="presets" id="userPresets"><article class="card"><header class="card-head"><h2 class="card-title">Textamisu 字幕</h2><p class="card-sub">語音辨識、字幕翻譯與聊天室翻譯共用你的 Textamisu API。</p></header></article><p class="auto-viewing-hint">自動判斷直播與預錄影片；字幕顯示設定仍可在影片浮窗調整。</p><input id="smartRoutingEnabled" type="checkbox" checked hidden /><input id="liveSharedEnabled" type="checkbox" hidden /></section>
+      <div class="advanced-wrap" id="advancedWrap">
+        <section class="panel is-active" id="panel-engine" data-tab-panel="engine">
+          <article class="card"><div class="card-body">
+            <label class="input-field user-model-field user-stt-model-field"><span class="input-label">語音辨識</span><select id="sttProvider"><option value="st-a">Textamisu 語音辨識</option></select><span id="sttProviderHint" class="field-hint"></span></label>
+            <label class="input-field user-model-field user-stt-thinking-field"><span class="input-label">音訊處理速度</span><select id="sttAudioSpeed" disabled><option value="1">原速（1×）</option></select><span id="sttAudioSpeedHint" class="field-hint">保持原始音訊時長</span></label>
+            <div class="input-field user-model-field user-context-field" id="sttContextSettings">
+              <strong>自訂背景與詞彙</strong><p id="sttContextResearchStatus" class="hint">這些設定保留在本機；目前 Textamisu API 不接受 STT 提示或自動搜尋。</p>
+              <label class="input-field"><span class="input-label">背景提示 <span id="sttPromptCount" class="input-hint">0</span></span><textarea id="sttPrompt" rows="3" maxlength="65536" placeholder="節目主題、人物或專有名詞"></textarea></label>
+              <label class="input-field"><span class="input-label">關鍵字 <span id="sttKeywordCount" class="input-hint">0</span></span><textarea id="sttKeywordInput" rows="3" placeholder="以逗號或換行分隔"></textarea></label>
+              <input id="sttKeywords" type="hidden" value="[]" /><input id="sourceLanguageHints" type="hidden" value="[]" /><input id="sttLanguageMode" type="hidden" value="auto" />
+            </div>
+            <label class="input-field user-model-field user-translation-model-field"><span class="input-label">字幕翻譯</span><select id="provider"><option value="lt-n">Textamisu 翻譯</option></select><span id="providerHint" class="field-hint">支援英文、日文、韓文、泰文、繁體中文</span></label>
+          </div></article>
+          <label class="switch user-model-field user-playback-field"><span class="switch-text"><span class="switch-title">音訊預取加速</span></span><span class="switch-control"><input id="audioPrefetchEnabled" type="checkbox" /><span class="switch-track" aria-hidden="true"></span></span></label>
+          <label class="switch user-model-field user-playback-field"><span class="switch-text"><span class="switch-title">自動略過可略過廣告</span><span class="switch-desc">不可略過廣告會暫停同步</span></span><span class="switch-control"><input id="autoSkipAds" type="checkbox" /><span class="switch-track" aria-hidden="true"></span></span></label>
+          <input id="mseSeekCatchupEnabled" type="checkbox" checked hidden /><input id="llmFallbackMode" type="hidden" value="off" />
+        </section>
+      </div>
+      <div class="config-hidden" hidden>
+        <input id="captionMode" type="hidden" value="viewer-sync" /><input
+          id="syncDelaySeconds"
+          type="hidden"
+          value="10"
+        /><input id="batchWaitSeconds" type="hidden" value="0" /><input
+          id="finalBatchingEnabled"
+          type="checkbox"
+          checked
+        /><input id="mseStartupBoostEnabled" type="checkbox" /><select
+          id="mseStartupBoostMode"
+        >
+          <option value="fast"></option>
+          <option value="mse-fast-llm"></option>
+          <option value="wait-first-mse"></option></select
+        ><input
+          id="mseStartupBoostTargetSeconds"
+          type="hidden"
+          value="24"
+        /><input id="disableSubtitleCache" type="checkbox" /><input
+          id="sourcePreloadEnabled"
+          type="checkbox"
+          disabled
+        /><input id="backendUrl" type="hidden" /><input
+          id="vadEnabled"
+          type="checkbox"
+        /><input id="segmentationMode" type="hidden" /><input
+          id="overlayMode"
+          type="hidden"
+        /><input id="overlayFontSize" type="hidden" /><input
+          id="overlayFontFamily"
+          type="hidden"
+        /><button
+          id="overlayEqualFontSizeButton"
+          type="button"
+          aria-pressed="false"
+        ></button
+        ><input id="overlayOpacity" type="hidden" /><input
+          id="overlayOriginalColor"
+          type="hidden"
+        /><input id="overlayTranslationColor" type="hidden" /><input
+          id="syncEnabled"
+          type="checkbox"
+          checked
+        /><input id="syncDelayMode" type="hidden" value="fixed" /><input
+          id="syncSubtitleOffsetSeconds"
+          type="hidden"
+        /><input id="adaptiveSyncDelayEnabled" type="checkbox" /><input
+          id="subtitleBufferTargetSegments"
+          type="hidden"
+        /><input id="saveEnabled" type="checkbox" />
+      </div>
+      <footer class="footer"><a href="https://textamisu.com/" target="_blank" rel="noopener">Textamisu</a></footer>
+    </main>
+    <script src="popup-i18n.js"></script>
+    <script src="textamisu-api.js"></script>
+    <script src="firebase-auth.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

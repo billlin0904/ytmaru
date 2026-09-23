@@ -1,0 +1,3 @@
+GoogleVideo 4.1.1, MIT license. https://github.com/LuanRT/googlevideo
+@bufbuild/protobuf 2.15.0, Apache-2.0 AND BSD-3-Clause. https://github.com/bufbuild/protobuf-es/tree/v2.15.0
+Includes local prefetch-sabr-source.mjs adapter. No player-script eval or token minting.

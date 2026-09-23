@@ -1,0 +1,16 @@
+Browser Silero VAD assets
+
+@ricky0123/vad-web 0.0.29
+https://github.com/ricky0123/vad
+License: ISC
+
+Silero VAD model
+https://github.com/snakers4/silero-vad
+License: MIT
+
+ONNX Runtime Web 1.22.0
+https://github.com/microsoft/onnxruntime
+License: MIT
+
+These files are bundled locally so the Chrome extension does not execute
+remotely hosted code.

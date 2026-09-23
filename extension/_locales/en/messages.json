@@ -1,0 +1,1058 @@
+{
+   "accountAndCredits": {
+      "message": "Account and credits"
+   },
+   "accountBalanceRequired": {
+      "message": "The account balance could not be loaded. Credit mode requires a confirmed balance before starting."
+   },
+   "accountNotReady": {
+      "message": "Not ready"
+   },
+   "activeTabNotFound": {
+      "message": "The current tab could not be found. Return to the video tab and reopen Subruu."
+   },
+   "addKeyword": {
+      "message": "Add keyword"
+   },
+   "adjustingDelay": {
+      "message": "Adjusting delay automatically from current timing data"
+   },
+   "advancedSettings": {
+      "message": "Advanced settings"
+   },
+   "anonymousEconomyTrialHint": {
+      "message": "Try without signing in: {{credits}} economy credits, for economy mode only."
+   },
+   "anonymousTrialHint": {
+      "message": "Your available trial balance is shown above. Sign in for more credits."
+   },
+   "atLeastCredits": {
+      "message": "At least {{credits}}"
+   },
+   "audioCaptureStartFailed": {
+      "message": "Audio capture could not start. Reload the extension and try again."
+   },
+   "audioPrefetchEnabled": {
+      "message": "Audio prefetch acceleration"
+   },
+   "authExpiredSignInAgain": {
+      "message": "Your sign-in session has expired. Please sign in again."
+   },
+   "authReadFailed": {
+      "message": "Could not read your sign-in status: {{error}}"
+   },
+   "authRetrying": {
+      "message": "Sign-in status is temporarily unavailable. Retrying automatically: {{error}}"
+   },
+   "authSyncFailed": {
+      "message": "Could not sync your sign-in status: {{error}}"
+   },
+   "authTemporarilyUnavailable": {
+      "message": "Sign-in status is temporarily unavailable: {{error}}"
+   },
+   "autoDetect": {
+      "message": "Auto (90+ languages)"
+   },
+   "autoSkipAds": {
+      "message": "Automatically skip skippable ads"
+   },
+   "autoSkipAdsDescription": {
+      "message": "Clicks the official Skip button when available. Sync pauses during unskippable ads."
+   },
+   "automaticFallback": {
+      "message": "Automatic fallback"
+   },
+   "automaticViewingHint": {
+      "message": "Live streams and recorded videos are detected automatically. Other sites use single-tab subtitles."
+   },
+   "batchWaitRange": {
+      "message": "0–15 seconds"
+   },
+   "batchWaitSeconds": {
+      "message": "Batch wait"
+   },
+   "billingReadFailed": {
+      "message": "Could not read billing status. Please try again."
+   },
+   "billingWillRecheck": {
+      "message": "Billing status could not be confirmed in advance and will be checked again when subtitles start."
+   },
+   "brandName": {
+      "message": "川流字幕subruu"
+   },
+   "brandTag": {
+      "message": "Live subtitles, always flowing"
+   },
+   "captionControlsAria": {
+      "message": "Subtitle controls"
+   },
+   "captionMode": {
+      "message": "Subtitle mode"
+   },
+   "captionModeLiveDelay": {
+      "message": "Delayed live sync (Twitch HLS / IG mirror)"
+   },
+   "captionModeSubtitle": {
+      "message": "Video platform and synchronization strategy"
+   },
+   "captionModeUniversal": {
+      "message": "Instant single tab (Universal)"
+   },
+   "captionModeYoutubeLowLatency": {
+      "message": "Single-tab MSE low latency (YouTube / MissAV / Xvideos)"
+   },
+   "captionModeYoutubeSync": {
+      "message": "Synchronized dual tabs (YouTube buffer)"
+   },
+   "captionPresetSubtitle": {
+      "message": "Choose a plan for what you watch"
+   },
+   "captionPresetTitle": {
+      "message": "Subtitle plan"
+   },
+   "checkingAccountAndStarting": {
+      "message": "Checking your account and starting subtitles…"
+   },
+   "checkingCredits": {
+      "message": "Checking available credits…"
+   },
+   "checkingPermissions": {
+      "message": "Checking the current video and site permissions…"
+   },
+   "chooseSourceLanguage": {
+      "message": "Choose source language"
+   },
+   "chooseSourceLanguageFallback": {
+      "message": "Choose source language"
+   },
+   "chooseTargetLanguage": {
+      "message": "Choose target language"
+   },
+   "chooseTargetLanguageFallback": {
+      "message": "Choose target language"
+   },
+   "clearSearch": {
+      "message": "Clear search"
+   },
+   "connectionFailed": {
+      "message": "Connection failed"
+   },
+   "costEstimate": {
+      "message": "Estimated cost"
+   },
+   "creatingAudioConnection": {
+      "message": "Connecting audio and preparing the subtitle buffer…"
+   },
+   "creatingAudioConnectionProgress": {
+      "message": "Cache lookup finished. Connecting audio and preparing the subtitle buffer · {{elapsed}}s"
+   },
+   "creatingTrialCredits": {
+      "message": "Creating your no-sign-in trial credits."
+   },
+   "creatingTrialRetry": {
+      "message": "Creating your no-sign-in trial. If this keeps failing, sign in instead."
+   },
+   "creditMode": {
+      "message": "Credit mode"
+   },
+   "creditModeHint": {
+      "message": "Your balance is checked before subtitles start, then credits are deducted from actual usage."
+   },
+   "creditSetupIncomplete": {
+      "message": "Credit setup incomplete"
+   },
+   "creditSetupWarning": {
+      "message": "Credit deduction is enabled, but payment or administration setup is incomplete. Existing credits will be used."
+   },
+   "currentEstimate": {
+      "message": "Currently about {{rate}}"
+   },
+   "currentEstimateUnbatched": {
+      "message": "Currently about {{rate}} (unbatched)"
+   },
+   "currentTabId": {
+      "message": "Current tab ID: {{tabId}}"
+   },
+   "currentVideoWebsite": {
+      "message": "this video website"
+   },
+   "customEnginePreset": {
+      "message": "Custom engine combination (adjustable in Advanced settings)"
+   },
+   "customSyncPreset": {
+      "message": "Custom sync settings (adjustable in Advanced settings)"
+   },
+   "delayAdjusted": {
+      "message": "Delay adjusted from {{previous}}s to the minimum safe value of {{minimum}}s. Starting subtitles…"
+   },
+   "delayDefaultRange": {
+      "message": "{{minimum}}–120 seconds"
+   },
+   "delayEconomyLiveRange": {
+      "message": "{{minimum}}–120 seconds (Economy without MSE / live)"
+   },
+   "delayEconomyMseRange": {
+      "message": "{{minimum}}–120 seconds (Economy with MSE)"
+   },
+   "delayLightningRange": {
+      "message": "{{minimum}}–120 seconds (minimum safe value for Lightning)"
+   },
+   "delayRange": {
+      "message": "2–120 seconds"
+   },
+   "delaySeconds": {
+      "message": "Delay"
+   },
+   "developerModelsGroup": {
+      "message": "Developer models"
+   },
+   "disconnected": {
+      "message": "Disconnected"
+   },
+   "economyDeveloperGroup": {
+      "message": "Economy (Developer)"
+   },
+   "economyGroup": {
+      "message": "Economy"
+   },
+   "economyPresetDescription": {
+      "message": "Uses the fewest credits and works well for everyday viewing"
+   },
+   "economyPresetName": {
+      "message": "Economy mode"
+   },
+   "emailVerificationRequired": {
+      "message": "Your email address has not been verified. Verify it first, then sign in again."
+   },
+   "engineNoReasoning": {
+      "message": "This engine has no reasoning options"
+   },
+   "engineTab": {
+      "message": "Engines"
+   },
+   "engineTabHint": {
+      "message": "STT · Translation"
+   },
+   "englishTestRequiresEnglishSource": {
+      "message": "This experimental English translation route requires the source language to be set explicitly to English. Auto and other languages use fallback routing, so startup was stopped to avoid an invalid test."
+   },
+   "estimateUnavailable": {
+      "message": "Estimate unavailable"
+   },
+   "extensionUpdateButton": {
+      "message": "Download update"
+   },
+   "extensionUpdateDescription": {
+      "message": "v{{current}} → v{{latest}}. Update to get the latest fixes."
+   },
+   "extensionUpdateDismiss": {
+      "message": "Remind me later"
+   },
+   "extensionUpdateTitle": {
+      "message": "Extension update available"
+   },
+   "fallbackGroup": {
+      "message": "Fallback"
+   },
+   "fallbackStrategy": {
+      "message": "Fallback strategy"
+   },
+   "fastStartup": {
+      "message": "MSE fast startup"
+   },
+   "fastStartupDescription": {
+      "message": "Start with realtime transcription and fast translation, or wait for the first MSE subtitle batch before playback."
+   },
+   "fastSwitchRange": {
+      "message": "20–30 seconds"
+   },
+   "fastSwitchThreshold": {
+      "message": "Fast-mode switch threshold"
+   },
+   "fixedDelay": {
+      "message": "Fixed delay: source audio capture / viewer subtitle display"
+   },
+   "fixedProcessing": {
+      "message": "Fixed level (not adjustable)"
+   },
+   "flashTranslate20": {
+      "message": "Flash Translate 2.0"
+   },
+   "freePrice": {
+      "message": "Free"
+   },
+   "genericError": {
+      "message": "Something went wrong. Please try again."
+   },
+   "gpt56Luna": {
+      "message": "Swift Translate 3.5 Pro"
+   },
+   "guestUse": {
+      "message": "No-registration trial"
+   },
+   "highSpeedGroup": {
+      "message": "High speed"
+   },
+   "hourlyBreakdown": {
+      "message": "STT {{stt}} + translation {{translation}}{{unbatched}}; fallback and overlapping audio billed separately"
+   },
+   "hourlyEstimate": {
+      "message": "Estimated per hour"
+   },
+   "hourlyEstimateHint": {
+      "message": "Based on the current STT engine and translation plan"
+   },
+   "hyMt27BTranslation": {
+      "message": "Swift Translate 3.5 Mini"
+   },
+   "ignoreSubtitleCache": {
+      "message": "Ignore cached subtitles"
+   },
+   "ignoreSubtitleCacheDescription": {
+      "message": "Use only subtitles generated in this session and ignore the video subtitle cache."
+   },
+   "initializationFailed": {
+      "message": "The extension popup could not initialize: {{error}}"
+   },
+   "instagramAccessDenied": {
+      "message": "Chrome has not allowed Subruu to access Instagram. Open Subruu from the toolbar and allow access to instagram.com, or enable site access from chrome://extensions."
+   },
+   "instagramNoLivePlayer": {
+      "message": "This Instagram page has no live player. Open an active IG Live first, then start subtitles."
+   },
+   "insufficientCredits": {
+      "message": "Not enough credits: starting requires at least {{minimum}}, but only {{balance}} remain."
+   },
+   "integratedEstimate": {
+      "message": "Integrated subtitles, about {{rate}}, with no separate STT charge"
+   },
+   "integratedHourlySummary": {
+      "message": "Integrated STT + translation: {{translation}}"
+   },
+   "integratedTokenCost": {
+      "message": "Integrated subtitles; cost is included in inference tokens"
+   },
+   "languageBatchSwitched": {
+      "message": "The selected batch engine does not support this source language, so STT Pro will be used"
+   },
+   "languageGroupAfricaOceania": {
+      "message": "African & Oceanian languages"
+   },
+   "languageGroupAsia": {
+      "message": "Asian languages"
+   },
+   "languageGroupCommon": {
+      "message": "Popular languages"
+   },
+   "languageGroupEurope": {
+      "message": "European languages"
+   },
+   "languageMatches": {
+      "message": "{{count}} matches"
+   },
+   "languageNotFound": {
+      "message": "No matching languages. Try another keyword."
+   },
+   "languageRealtimeUnsupported": {
+      "message": "This source language is outside the official STT Mini Realtime list. The selected engine will remain active."
+   },
+   "languageTotal": {
+      "message": "{{count}} languages"
+   },
+   "ledgerReadFailed": {
+      "message": "Could not load the credit ledger. Check your connection and sign-in status."
+   },
+   "liteEconomyTranslation": {
+      "message": "Translate Lite Economy"
+   },
+   "liveStreamMode": {
+      "message": "Twitch / IG Live"
+   },
+   "liveStreamModeDescription": {
+      "message": "Live mode: 10s for Lightning Live, 25s for every other engine"
+   },
+   "liveStreamNotPlayable": {
+      "message": "No playable {{platform}} live stream was found. Make sure the stream is still live and fully loaded, then retry."
+   },
+   "loading": {
+      "message": "Loading"
+   },
+   "loadingLedger": {
+      "message": "Loading the usage ledger…"
+   },
+   "loadingSettings": {
+      "message": "Loading settings…"
+   },
+   "localDictation": {
+      "message": "Local transcription"
+   },
+   "localNoSttCredits": {
+      "message": "Runs locally and uses no STT credits"
+   },
+   "localWebsocketHint": {
+      "message": "Use a local ws:// or managed GPU wss:// endpoint"
+   },
+   "localeName": {
+      "message": "English"
+   },
+   "memberCtaDefault": {
+      "message": "View plans, orders, and balance"
+   },
+   "memberCtaSignedIn": {
+      "message": "View credits, subtitle history, and top-up history"
+   },
+   "memberCtaSignedOut": {
+      "message": "Learn about the product, view plans, or create an account"
+   },
+   "memberCtaTrial": {
+      "message": "Sign in for more credits and keep your purchase history"
+   },
+   "memberSiteUrl": {
+      "message": "https://subruu.com/en/#member-credits"
+   },
+   "mergeTranslationRequests": {
+      "message": "Batch translation requests"
+   },
+   "mergeTranslationRequestsDescription": {
+      "message": "Reduces repeated prompt tokens and request count. Turning it off may reduce latency but increases cost."
+   },
+   "meteringMode": {
+      "message": "Metering mode"
+   },
+   "meteringModeHint": {
+      "message": "Cost and usage are recorded but credits are not deducted. The remaining balance is shown for reference."
+   },
+   "meteringStartAllowed": {
+      "message": "Metering mode records cost and usage without deducting credits."
+   },
+   "miniLanguageSwitched": {
+      "message": "STT Mini does not support this source language, so STT Pro was selected"
+   },
+   "miniLanguageUnsupported": {
+      "message": "STT Mini does not support this source language"
+   },
+   "miniNoReasoning": {
+      "message": "Mini uses no reasoning"
+   },
+   "mseOriginalDurationBilling": {
+      "message": "MSE audio is billed at its original duration; reasoning depth does not affect STT price"
+   },
+   "mseSeekCatchup": {
+      "message": "Catch up subtitles after seeking"
+   },
+   "mseSeekCatchupDescription": {
+      "message": "When seeking into an uncached range, keep audio on while preloading forward, then return to the seek point once after subtitles are ready. Turn this off to keep playing and skip subtitles that arrive too late."
+   },
+   "noCreditDeduction": {
+      "message": "No deduction"
+   },
+   "noFallback": {
+      "message": "No fallback"
+   },
+   "noLanguageMatches": {
+      "message": "No matching languages"
+   },
+   "noReasoning": {
+      "message": "No reasoning"
+   },
+   "notApplicable": {
+      "message": "Not applicable"
+   },
+   "openExtensionOnVideoTab": {
+      "message": "Switch to the video tab you want to translate, then reopen Subruu from the toolbar and start subtitles."
+   },
+   "openVideoPrompt": {
+      "message": "Open YouTube, Twitch, or another video page, then select Start subtitles."
+   },
+   "openingLoginPage": {
+      "message": "Opening the website sign-in page. Return to the extension when finished."
+   },
+   "overlaySettingsAfter": {
+      "message": "button."
+   },
+   "overlaySettingsBefore": {
+      "message": "Adjust subtitle fonts, colors, and display mode from the overlay's"
+   },
+   "pageTitle": {
+      "message": "川流字幕subruu"
+   },
+   "partialInitializationFailed": {
+      "message": "Part of the interface could not initialize, but sign-in will still load: {{error}}"
+   },
+   "partsSeparator": {
+      "message": ", "
+   },
+   "plansEstimateUnavailable": {
+      "message": "No estimate is available for: {{parts}}"
+   },
+   "preparingSubtitleProgress": {
+      "message": "Preparing the video and subtitle service · {{elapsed}}s"
+   },
+   "preparingSubtitleWindowProgress": {
+      "message": "Subtitle window is ready. Waiting for the first subtitle batch · {{elapsed}}s"
+   },
+   "previewUserUi": {
+      "message": "Preview user UI"
+   },
+   "previousStartFailed": {
+      "message": "Previous start failed: {{error}}"
+   },
+   "primaryLanguage": {
+      "message": "Primary language"
+   },
+   "privacyPolicy": {
+      "message": "Privacy Policy"
+   },
+   "privacyPolicyUrl": {
+      "message": "https://subruu.com/en/privacy.html"
+   },
+   "productionCredits": {
+      "message": "Live credit deduction"
+   },
+   "qualityPlanEstimate": {
+      "message": "High-quality mode plan: {{total}}"
+   },
+   "qualityPresetDescription": {
+      "message": "Interviews, lessons, and everyday conversations"
+   },
+   "qualityPresetName": {
+      "message": "High-quality mode"
+   },
+   "quickSettings": {
+      "message": "Quick settings"
+   },
+   "readSettingsFailed": {
+      "message": "Could not read extension settings: {{error}}"
+   },
+   "readingVideoTimelineProgress": {
+      "message": "Reading the video timeline and playback position · waited {{elapsed}}s, up to about {{maximum}}s"
+   },
+   "realtimeStt": {
+      "message": "STT Realtime"
+   },
+   "reasoningCostHint": {
+      "message": "Deeper reasoning improves accuracy and increases cost"
+   },
+   "reasoningDepth": {
+      "message": "Thinking"
+   },
+   "recommendedDelay": {
+      "message": "Recommended: {{seconds}}s"
+   },
+   "recommendedModelsGroup": {
+      "message": "Available models"
+   },
+   "remainingCredits": {
+      "message": "Credits remaining"
+   },
+   "removeKeyword": {
+      "message": "Remove keyword"
+   },
+   "removeLanguageHint": {
+      "message": "Remove language"
+   },
+   "restartSubtitles": {
+      "message": "Restart subtitles"
+   },
+   "restartingSubtitles": {
+      "message": "Restarting subtitles…"
+   },
+   "returnDeveloperUi": {
+      "message": "Return to developer UI"
+   },
+   "returnQuickSettings": {
+      "message": "Return to quick settings"
+   },
+   "returnedDeveloperUi": {
+      "message": "Returned to the developer UI."
+   },
+   "searchLanguages": {
+      "message": "Search by language, code, or English name"
+   },
+   "searchSourceLanguage": {
+      "message": "Search source languages"
+   },
+   "searchTargetLanguage": {
+      "message": "Search target languages"
+   },
+   "serviceRequestCancelled": {
+      "message": "Research cancelled."
+   },
+   "serviceRequestFailed": {
+      "message": "Service request failed ({{status}})"
+   },
+   "serviceTimeout": {
+      "message": "The subtitle service timed out after {{seconds}}s. Please try again."
+   },
+   "settingsButton": {
+      "message": "Settings"
+   },
+   "settingsError": {
+      "message": "Settings error"
+   },
+   "settingsSavedRestart": {
+      "message": "Settings saved. Restart subtitles to apply model or audio pipeline changes."
+   },
+   "sharedLiveMode": {
+      "message": "Shared Live · YouTube / Twitch"
+   },
+   "sharedLiveModeDescription": {
+      "message": "Reuses subtitles from the same live stream and syncs them to each viewer's playback time"
+   },
+   "signInMember": {
+      "message": "Sign in"
+   },
+   "signOut": {
+      "message": "Sign out"
+   },
+   "signedIn": {
+      "message": "Signed in"
+   },
+   "signedOut": {
+      "message": "Signed out"
+   },
+   "signedOutRecreatingTrial": {
+      "message": "Signed out. Recreating your no-sign-in trial."
+   },
+   "signedOutUsingTrial": {
+      "message": "Signed out. This browser is now using its no-sign-in trial credits."
+   },
+   "singingPlanEstimate": {
+      "message": "Singing mode plan: {{total}}"
+   },
+   "singingPresetDescription": {
+      "message": "Songs, concerts, and music videos"
+   },
+   "singingPresetName": {
+      "message": "Singing mode"
+   },
+   "singleTabAudioSync": {
+      "message": "Aligning the single-tab audio track"
+   },
+   "singleTabInstant": {
+      "message": "Single-tab instant mode: subtitles appear when ready"
+   },
+   "siteAccessNotGranted": {
+      "message": "Chrome has not granted access to this video site. Return to the video tab, select Start subtitles, and choose Allow."
+   },
+   "sitePermissionRequired": {
+      "message": "Allow Subruu to access {{platform}} so it can capture audio and keep subtitles visible after navigation. Select Start subtitles again, then choose Allow in Chrome."
+   },
+   "smartSyncMode": {
+      "message": "Smart sync · YouTube / Twitch"
+   },
+   "smartSyncModeDescription": {
+      "message": "Automatically routes videos and live streams; Instagram Live is also supported"
+   },
+   "sourceLanguage": {
+      "message": "From"
+   },
+   "sourceLanguageList": {
+      "message": "Source languages"
+   },
+   "speechToText": {
+      "message": "Speech to text"
+   },
+   "speechToTextSubtitle": {
+      "message": "Choose a transcription model"
+   },
+   "standardTokenPricing": {
+      "message": "Standard token pricing"
+   },
+   "startFailed": {
+      "message": "Could not start subtitles."
+   },
+   "startSubtitles": {
+      "message": "Start subtitles"
+   },
+   "startedSingleTabUsage": {
+      "message": "Single-tab instant subtitles started. Signed in and recording usage."
+   },
+   "startedUsage": {
+      "message": "Subtitles started. Signed in and recording usage."
+   },
+   "startingCurrentTabUsage": {
+      "message": "Starting subtitles on this tab. Usage will be recorded."
+   },
+   "startingSingleTabUsage": {
+      "message": "Starting single-tab instant subtitles. Usage will be recorded."
+   },
+   "startupStrategy": {
+      "message": "MSE startup strategy"
+   },
+   "startupStrategyCatchUp": {
+      "message": "Catch up with lightning translation, then switch back"
+   },
+   "startupStrategyFast": {
+      "message": "Fast fallback (realtime STT + lightning translation)"
+   },
+   "startupStrategyWait": {
+      "message": "Wait for the first MSE subtitle batch"
+   },
+   "statusActive": {
+      "message": "Live"
+   },
+   "statusCreditsRequired": {
+      "message": "Credits required"
+   },
+   "statusError": {
+      "message": "Error"
+   },
+   "statusIdle": {
+      "message": "Ready"
+   },
+   "statusInsufficientCredits": {
+      "message": "Not enough credits"
+   },
+   "statusNotReady": {
+      "message": "Not ready"
+   },
+   "statusStartFailed": {
+      "message": "Start failed"
+   },
+   "stopFailed": {
+      "message": "Could not stop subtitles."
+   },
+   "stopSubtitles": {
+      "message": "Stop"
+   },
+   "stopped": {
+      "message": "Subtitles stopped."
+   },
+   "stopping": {
+      "message": "Stopping…"
+   },
+   "stt35Pro": {
+      "message": "STT 3.5 Pro"
+   },
+   "sttAdditionalLanguages": {
+      "message": "Recognition languages"
+   },
+   "sttAdditionalLanguagesSearch": {
+      "message": "Search and add a language"
+   },
+   "sttContextAutoResearch": {
+      "message": "Research recognition context automatically"
+   },
+   "sttContextAutoResearchDescription": {
+      "message": "Captions start immediately; the prompt and keywords apply when research finishes."
+   },
+   "sttContextAutomaticError": {
+      "message": "Smart research could not finish. Your current manual settings will still be used."
+   },
+   "sttContextAutomaticLoading": {
+      "message": "Smart research is preparing the prompt and keywords in the background. Captions will start normally."
+   },
+   "sttContextAutomaticReady": {
+      "message": "Smart research filled the editable fields ({{count}} keywords, {{seconds}}s)."
+   },
+   "sttContextHotApply": {
+      "message": "Applies to the next caption batch"
+   },
+   "sttContextPeriodicRefresh": {
+      "message": "Refresh dialogue context"
+   },
+   "sttContextPeriodicRefreshDescription": {
+      "message": "A low-cost model periodically summarizes recent dialogue and updates the prompt and keywords without another web search."
+   },
+   "sttContextRefresh10Minutes": {
+      "message": "Every 10 minutes"
+   },
+   "sttContextRefresh3Minutes": {
+      "message": "Every 3 minutes"
+   },
+   "sttContextRefresh5Minutes": {
+      "message": "Every 5 minutes"
+   },
+   "sttContextRefreshInterval": {
+      "message": "Check interval"
+   },
+   "sttContextResearchButton": {
+      "message": "Research and fill prompt/keywords"
+   },
+   "sttContextResearchCached": {
+      "message": " (cached)"
+   },
+   "sttContextResearchCancel": {
+      "message": "Cancel research"
+   },
+   "sttContextResearchCancelled": {
+      "message": "Research cancelled. You can edit the prompt and try again."
+   },
+   "sttContextResearchEmpty": {
+      "message": "Research finished, but no useful recognition context was found."
+   },
+   "sttContextResearchHint": {
+      "message": "A research prompt takes priority; leave it blank to research the current YouTube video."
+   },
+   "sttContextResearchPromptOrYouTube": {
+      "message": "Enter a research prompt, or open a YouTube video or livestream."
+   },
+   "sttContextResearchSearching": {
+      "message": "Researching terminology and context from your prompt. This usually takes a few seconds..."
+   },
+   "sttContextResearchSignIn": {
+      "message": "Sign in before using smart context research."
+   },
+   "sttContextResearchSuccess": {
+      "message": "Done: {{count}} keywords in {{seconds}}s{{cache}}"
+   },
+   "sttContextResearchYouTubeOnly": {
+      "message": "Open a YouTube video or livestream first."
+   },
+   "sttContextSearchDirection": {
+      "message": "Research prompt (highest priority)"
+   },
+   "sttContextSearchDirectionPlaceholder": {
+      "message": "Example: Americas trade meeting focused on customs, HTSUS, and import rules"
+   },
+   "sttContextTitle": {
+      "message": "Recognition context"
+   },
+   "sttEngine": {
+      "message": "STT model"
+   },
+   "sttFixedProcessingHint": {
+      "message": "This model uses a fixed processing level; Thinking cannot be adjusted."
+   },
+   "sttKeywordBulkHint": {
+      "message": "One per line; commas and semicolons also work. Up to 80 characters each and 992 keywords total."
+   },
+   "sttKeywordPlaceholder": {
+      "message": "One keyword per line, or separate them with commas or semicolons"
+   },
+   "sttKeywordsLabel": {
+      "message": "Keywords"
+   },
+   "sttLanguageAuto": {
+      "message": "Smart detect"
+   },
+   "sttLanguageMode": {
+      "message": "Language mode"
+   },
+   "sttLanguageMulti": {
+      "message": "Multilingual"
+   },
+   "sttLanguageSingle": {
+      "message": "Single language"
+   },
+   "sttMini": {
+      "message": "STT Mini"
+   },
+   "sttMini2": {
+      "message": "STT 3.0"
+   },
+   "sttMiniRealtime": {
+      "message": "STT Mini Realtime"
+   },
+   "sttPro": {
+      "message": "STT 3.0 Pro"
+   },
+   "sttProPrice": {
+      "message": "from 10,000 credits/h"
+   },
+   "sttProcessingLevelsHint": {
+      "message": "Low, Med, and High are transcription processing levels. Estimated cost follows the selected level."
+   },
+   "sttPromptLabel": {
+      "message": "Prompt"
+   },
+   "sttPromptPlaceholder": {
+      "message": "Add the topic, people, or terminology"
+   },
+   "subtitleCacheFoundStarting": {
+      "message": "Cached subtitles found in {{elapsed}}s. Aligning them with the current frame…"
+   },
+   "subtitleCacheLookupProgress": {
+      "message": "Looking for cached subtitles · waited {{elapsed}}s, up to {{maximum}}s. {{fallback}}"
+   },
+   "subtitleCacheMissStartingLive": {
+      "message": "No usable cache found in {{elapsed}}s. Starting subtitle generation and buffering now…"
+   },
+   "subtitleCacheMissStartsBuffer": {
+      "message": "If none are available, subtitle generation starts automatically and then builds about {{seconds}}s of buffer."
+   },
+   "subtitleCacheMissStartsNow": {
+      "message": "If none are available, live subtitle generation starts automatically."
+   },
+   "subtitleOverlayMountFailed": {
+      "message": "The subtitle overlay could not attach to the video page. Wait for the page to finish loading, then try again."
+   },
+   "subtitleSettings": {
+      "message": "Subtitle settings"
+   },
+   "switchToChinese": {
+      "message": "Switch to Traditional Chinese"
+   },
+   "switchToEnglish": {
+      "message": "Switch to English"
+   },
+   "switchedUserPreview": {
+      "message": "Switched to the standard user UI preview."
+   },
+   "syncSettings": {
+      "message": "Sync settings"
+   },
+   "syncSettingsDescription": {
+      "message": "Fine-tune subtitle timing"
+   },
+   "syncTab": {
+      "message": "Sync"
+   },
+   "syncTabHint": {
+      "message": "Delay"
+   },
+   "syncingAccountState": {
+      "message": "Syncing your member sign-in…"
+   },
+   "targetLanguageList": {
+      "message": "Target languages"
+   },
+   "toggleAdvancedSettings": {
+      "message": "Toggle advanced settings"
+   },
+   "tooManySubtitleSessions": {
+      "message": "You can run subtitles on up to {{max}} tabs at once. Stop one session and try again."
+   },
+   "topUpOnWebsite": {
+      "message": "Top up on our website"
+   },
+   "traditionalChinese": {
+      "message": "Traditional Chinese"
+   },
+   "translateTo": {
+      "message": "Translate to"
+   },
+   "translation": {
+      "message": "Translation"
+   },
+   "translation20Economy": {
+      "message": "Translate 2.0 Economy"
+   },
+   "translation20Standard": {
+      "message": "Translate 2.0 Standard"
+   },
+   "translation30Economy": {
+      "message": "Translate 3.0 Economy"
+   },
+   "translation30Standard": {
+      "message": "Translate 3.0 Standard"
+   },
+   "translationExperimental": {
+      "message": "Translate X"
+   },
+   "translationHighSpeed": {
+      "message": "Translate 3.0 High Speed"
+   },
+   "translationHighSpeedPreview": {
+      "message": "Translate 2.0 High Speed (Preview)"
+   },
+   "translationLightning": {
+      "message": "Lightning Translate"
+   },
+   "translationPart": {
+      "message": "translation"
+   },
+   "translationPlan": {
+      "message": "Translation model"
+   },
+   "translationSubtitle": {
+      "message": "Choose a translation model"
+   },
+   "trialActive": {
+      "message": "Trial active"
+   },
+   "trialDescription": {
+      "message": "The extension automatically creates a trial identity for this browser with 1,000 credits. No registration required. Sign in for more credits."
+   },
+   "trialEyebrow": {
+      "message": "// TRY WITHOUT SIGNING IN"
+   },
+   "trialNoRegistration": {
+      "message": "Start without registering"
+   },
+   "trialNotReady": {
+      "message": "Your no-sign-in trial is not ready. Check your connection and try again, or sign in."
+   },
+   "trialPreparing": {
+      "message": "Getting ready. "
+   },
+   "trialReadyAccent": {
+      "message": "Install it and start watching."
+   },
+   "trialSecureCredits": {
+      "message": "Credits are securely managed by the service"
+   },
+   "trialTemporarilyUnavailable": {
+      "message": "The no-sign-in trial is temporarily unavailable. Please try again later or sign in with an account."
+   },
+   "trialUpgradeAnytime": {
+      "message": "Upgrade your account anytime"
+   },
+   "twitchMirrorDelay": {
+      "message": "Twitch mirror delay: local video and subtitle buffer"
+   },
+   "twitchOriginalDelay": {
+      "message": "Twitch HLS source-stream delay: no re-encoding"
+   },
+   "unbatchedSuffix": {
+      "message": " (unbatched)"
+   },
+   "universalMode": {
+      "message": "Universal single tab"
+   },
+   "universalModeDescription": {
+      "message": "Works on any video site and displays subtitles as soon as they are ready"
+   },
+   "unknown": {
+      "message": "Unknown"
+   },
+   "videoTabClosed": {
+      "message": "The video tab was closed, so subtitles could not start. Open the video again and retry."
+   },
+   "viewModeSubtitle": {
+      "message": "The extension chooses the best route for each platform"
+   },
+   "viewModeTitle": {
+      "message": "Viewing mode"
+   },
+   "walletAutomaticRouting": {
+      "message": "General credits are used automatically when economy credits run out. Acceleration and rescue are charged separately to general credits."
+   },
+   "walletConcurrencyLimit": {
+      "message": "Several subtitle requests are still processing. Please try again shortly."
+   },
+   "walletContextChargeConfirm": {
+      "message": "Smart research and ongoing context reviews use general credits separately, outside economy credits or unlimited economy plans. Enable this? Your choice is remembered for this account and can be turned off at any time."
+   },
+   "walletContextChargeNotice": {
+      "message": "Smart research and ongoing context reviews use general credits separately. Economy credits and unlimited economy plans do not cover them."
+   },
+   "walletEconomyExhausted": {
+      "message": "Available credits are insufficient. Please top up to continue."
+   },
+   "walletGeneralExhausted": {
+      "message": "General credits are insufficient. Top up or choose an available economy plan."
+   },
+   "walletPassSessionLimit": {
+      "message": "The unlimited pass supports one subtitle session at a time. Stop the other tab first."
+   },
+   "walletPassUnavailable": {
+      "message": "The unlimited pass is temporarily unavailable. Please contact support."
+   },
+   "walletRequestRateLimit": {
+      "message": "Subtitle requests are too frequent. Please try again shortly."
+   },
+   "walletRescueConsentRequired": {
+      "message": "Rescue authorization is no longer valid. Please restart subtitles."
+   },
+   "walletSessionUnavailable": {
+      "message": "This subtitle session has stopped or expired. Please start it again."
+   },
+   "youtubeVideoMode": {
+      "message": "YouTube video"
+   },
+   "youtubeVideoModeDescription": {
+      "message": "VOD: 10s. Live: 10s for Lightning, 25s for every other engine"
+   }
+}

@@ -1,0 +1,233 @@
+{
+   "anonymousEconomyTrialHint": {
+      "message": "免登入試用提供 {{credits}} 經濟 credits，限經濟模式使用。"
+   },
+   "audioPrefetchEnabled": {
+      "message": "音訊預取加速"
+   },
+   "automaticViewingHint": {
+      "message": "自動判斷直播與預錄影片；不支援的網站使用單分頁字幕。"
+   },
+   "brandName": {
+      "message": "川流字幕subruu"
+   },
+   "brandTag": {
+      "message": "字幕川流不息"
+   },
+   "captionPresetSubtitle": {
+      "message": "依觀看內容選擇字幕方案"
+   },
+   "developerModelsGroup": {
+      "message": "開發者模型"
+   },
+   "extensionUpdateButton": {
+      "message": "下載新版"
+   },
+   "extensionUpdateDescription": {
+      "message": "v{{current}} → v{{latest}}，建議更新以取得最新修正。"
+   },
+   "extensionUpdateDismiss": {
+      "message": "稍後提醒"
+   },
+   "extensionUpdateTitle": {
+      "message": "新版插件可用"
+   },
+   "fixedProcessing": {
+      "message": "固定檔位（不支援調整）"
+   },
+   "gpt56Luna": {
+      "message": "訊譯3.5 Pro"
+   },
+   "hyMt27BTranslation": {
+      "message": "訊譯3.5 mini"
+   },
+   "localeName": {
+      "message": "繁體中文"
+   },
+   "mseSeekCatchup": {
+      "message": "跳轉後等待字幕"
+   },
+   "pageTitle": {
+      "message": "川流字幕subruu"
+   },
+   "qualityPlanEstimate": {
+      "message": "高品質模式方案 {{total}}"
+   },
+   "qualityPresetDescription": {
+      "message": "訪談、課程與日常對話"
+   },
+   "qualityPresetName": {
+      "message": "高品質模式"
+   },
+   "reasoningDepth": {
+      "message": "Thinking"
+   },
+   "recommendedModelsGroup": {
+      "message": "可用模型"
+   },
+   "serviceRequestCancelled": {
+      "message": "已取消搜尋。"
+   },
+   "singingPlanEstimate": {
+      "message": "歌唱模式方案 {{total}}"
+   },
+   "singingPresetDescription": {
+      "message": "歌曲、演唱會與音樂影片"
+   },
+   "singingPresetName": {
+      "message": "歌唱模式"
+   },
+   "stt35Pro": {
+      "message": "訊聽 3.5 Pro"
+   },
+   "sttContextAutoResearch": {
+      "message": "自動搜尋辨識情境"
+   },
+   "sttContextAutoResearchDescription": {
+      "message": "字幕先開始，搜尋完成後自動套用 Prompt 與關鍵字。"
+   },
+   "sttContextAutomaticError": {
+      "message": "智慧搜尋暫時無法完成；目前手動設定仍會照常使用。"
+   },
+   "sttContextAutomaticLoading": {
+      "message": "智慧搜尋正在背景整理 Prompt 與關鍵字，字幕會先正常開始。"
+   },
+   "sttContextAutomaticReady": {
+      "message": "智慧搜尋已填入欄位，可直接修改（{{count}} 個關鍵字，{{seconds}} 秒）。"
+   },
+   "sttContextPeriodicRefresh": {
+      "message": "定時更新對話情境"
+   },
+   "sttContextPeriodicRefreshDescription": {
+      "message": "定期用低成本模型整理最近對話，直接更新 Prompt 與關鍵字，不再次網路搜尋。"
+   },
+   "sttContextRefresh10Minutes": {
+      "message": "每 10 分鐘"
+   },
+   "sttContextRefresh3Minutes": {
+      "message": "每 3 分鐘"
+   },
+   "sttContextRefresh5Minutes": {
+      "message": "每 5 分鐘"
+   },
+   "sttContextRefreshInterval": {
+      "message": "檢查間隔"
+   },
+   "sttContextResearchButton": {
+      "message": "搜尋並填入 Prompt／關鍵字"
+   },
+   "sttContextResearchCached": {
+      "message": "（快取）"
+   },
+   "sttContextResearchCancel": {
+      "message": "取消搜尋"
+   },
+   "sttContextResearchCancelled": {
+      "message": "已取消搜尋，可以修改指令後重新搜尋。"
+   },
+   "sttContextResearchEmpty": {
+      "message": "搜尋完成，但沒有找到可用的辨識情境。"
+   },
+   "sttContextResearchHint": {
+      "message": "有研究指令時優先照指令搜尋；留空則研究目前 YouTube 影片。"
+   },
+   "sttContextResearchPromptOrYouTube": {
+      "message": "請輸入研究指令；若未輸入，則需切到 YouTube 影片或直播。"
+   },
+   "sttContextResearchSearching": {
+      "message": "正在依照研究指令搜尋專有名詞與背景，通常需要數秒..."
+   },
+   "sttContextResearchSignIn": {
+      "message": "請先登入再使用智慧情境搜尋。"
+   },
+   "sttContextResearchSuccess": {
+      "message": "完成：{{count}} 個關鍵字，搜尋 {{seconds}} 秒{{cache}}"
+   },
+   "sttContextResearchYouTubeOnly": {
+      "message": "請先切到一支 YouTube 影片或直播。"
+   },
+   "sttContextSearchDirection": {
+      "message": "研究指令（最高優先）"
+   },
+   "sttContextSearchDirectionPlaceholder": {
+      "message": "例如：美洲貿易會議，聚焦海關、HTSUS 與進出口規範"
+   },
+   "sttEngine": {
+      "message": "STT 模型"
+   },
+   "sttFixedProcessingHint": {
+      "message": "此模型使用固定檔位，無法調整 Thinking。"
+   },
+   "sttKeywordBulkHint": {
+      "message": "每行一個，也可用逗號或分號分隔；單項最多 80 字，共 992 個。"
+   },
+   "sttKeywordPlaceholder": {
+      "message": "每行一個關鍵字，也可用逗號或分號分隔"
+   },
+   "sttKeywordsLabel": {
+      "message": "關鍵字"
+   },
+   "sttMini2": {
+      "message": "迅聽3.0"
+   },
+   "sttPro": {
+      "message": "迅聽3.0 Pro"
+   },
+   "sttProcessingLevelsHint": {
+      "message": "Low、Med、High 為辨識處理檔位，費用依所選檔位估算。"
+   },
+   "switchToChinese": {
+      "message": "切換為繁體中文"
+   },
+   "switchToEnglish": {
+      "message": "切換為英文"
+   },
+   "syncSettings": {
+      "message": "同步設定"
+   },
+   "syncSettingsDescription": {
+      "message": "微調字幕與影片的時間差"
+   },
+   "syncingAccountState": {
+      "message": "正在同步會員登入狀態…"
+   },
+   "translation20Economy": {
+      "message": "即譯 2.0 經濟"
+   },
+   "translation30Economy": {
+      "message": "即譯 3.0 經濟"
+   },
+   "translationLightning": {
+      "message": "即譯閃電"
+   },
+   "translationPlan": {
+      "message": "翻譯模型"
+   },
+   "walletAutomaticRouting": {
+      "message": "經濟額度不足時自動使用通用額度；加速與救援另扣通用額度。"
+   },
+   "walletConcurrencyLimit": {
+      "message": "目前處理中的字幕請求較多，請稍候再試。"
+   },
+   "walletEconomyExhausted": {
+      "message": "目前可用額度不足，請儲值後再繼續。"
+   },
+   "walletGeneralExhausted": {
+      "message": "通用額度不足，請先儲值或改用可用的經濟方案。"
+   },
+   "walletPassSessionLimit": {
+      "message": "吃到飽同時限一個字幕工作，請先停止另一個分頁。"
+   },
+   "walletPassUnavailable": {
+      "message": "吃到飽方案暫時無法使用，請聯絡客服。"
+   },
+   "walletRequestRateLimit": {
+      "message": "字幕請求較頻繁，請稍候再試。"
+   },
+   "walletRescueConsentRequired": {
+      "message": "救援授權已失效，請重新開始字幕。"
+   },
+   "walletSessionUnavailable": {
+      "message": "字幕工作已停止或過期，請重新開始。"
+   }
+}

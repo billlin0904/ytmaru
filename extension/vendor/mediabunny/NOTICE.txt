@@ -1,0 +1,3 @@
+Mediabunny 1.56.2 by Vanilagy. MPL-2.0. Unmodified npm browser bundle.
+Corresponding source: https://www.npmjs.com/package/mediabunny/v/1.56.2
+Repository: https://github.com/Vanilagy/mediabunny
