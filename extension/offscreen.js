@@ -1634,6 +1634,7 @@ function yc(e, t, n = 3e4) {
         }));
     }, n);
     function s(t) {
+      if (t.source !== r || t.origin !== rc) return;
       const n = t.data || {};
       "offscreen-manager" === n?.target &&
         n.runnerSessionId === e &&
@@ -16730,7 +16731,13 @@ function HM(e = [], t = {}) {
   };
 }
 (chrome.runtime.onMessage.addListener((e, t, n) => {
-  if ("offscreen" === e?.target && !ic)
+  if ("offscreen" === e?.target && !ic) {
+    const trustedWorker=t?.id===chrome.runtime.id && !t.tab && (!t.url || t.url===chrome.runtime.getURL('service-worker.js'));
+    // Content scripts only submit their existing diagnostic event. They may
+    // not command the capture manager to relay privileged provider operations.
+    if (!trustedWorker && !(t?.id===chrome.runtime.id && e.type==='APPEND_EVENT_LOG')) {
+      n({ok:false,error:'無效的字幕擷取控制來源'}); return false;
+    }
     return (
       fc(e)
         .then(n)
@@ -16739,9 +16746,11 @@ function HM(e = [], t = {}) {
         ),
       !0
     );
+  }
 }),
   ic &&
     window.addEventListener("message", (e) => {
+      if (e.source !== window.parent || e.origin !== rc) return;
       const t = e.data || {};
       if ("offscreen-runner" !== t?.target || t.runnerSessionId !== ic) return;
       const n = t.requestId || "";
@@ -24589,11 +24598,11 @@ function yA() {
 }
 async function bA(e, t) {
 if(gc.remoteSessionStartPromise) await gc.remoteSessionStartPromise;
-  const localId=gc.sessionId, remote=await TextamisuPipeline.session(localId);
+  const localId=gc.sessionId;
   const ids=[...new Set(e.walletSttRequestIds||[])];
   if(!ids.length) throw new Error('字幕缺少對應的 Textamisu 語音辨識工作');
   const source=(!e.sourceLang||e.sourceLang==='auto') ? ids.map(id=>gc.textamisuSttLanguages?.get(id)).find(Boolean) : e.sourceLang;
-  const data=await TextamisuApi.translate(remote.sessionId,{requestId:String(e.requestId),sttRequestIds:ids,text:e.text,sourceLanguage:TextamisuPipeline.language(source),targetLanguage:TextamisuPipeline.language(e.targetLang),previousSourceContext:String(e.previousSourceContext||'').slice(-1500)});
+  const data=await TextamisuPipeline.translate(localId,{requestId:String(e.requestId),sttRequestIds:ids,text:e.text,sourceLanguage:TextamisuPipeline.language(source),targetLanguage:TextamisuPipeline.language(e.targetLang),previousSourceContext:String(e.previousSourceContext||'').slice(-1500)});
   if(gc.sessionId!==localId || gc.isStopping) throw new Error('字幕工作階段已切換');
   return {...data,original:e.text,provider:'textamisu',usage:null};
 }
@@ -28081,21 +28090,13 @@ async function vx(e = {}) {
 async function yx(e) {
   if ((Sx(e), !gc.config.saveEnabled || !gc.sessionId)) return;
   if (await wx(e)) return;
-  const t = `liveSubtitleSession:${gc.sessionId}`,
-    n = (await chrome.storage.local.get(t))[t] || {
-      sessionId: gc.sessionId,
+  await TextamisuPipeline.saveSegment(gc.sessionId,{
       pageUrl: gc.config.pageUrl || "",
       pageTitle: gc.config.pageTitle || "",
       sourceLang: gc.config.sourceLang,
       targetLang: gc.config.targetLang,
       startedAt: gc.config.startedAt || new Date().toISOString(),
-      savedTo: "local-mvp-fallback",
-      segments: [],
-    };
-  (Array.isArray(n.segments) || (n.segments = []),
-    n.segments.push(e),
-    (n.updatedAt = new Date().toISOString()),
-    await chrome.storage.local.set({ [t]: n }));
+    },e);
 }
 function bx(e) {
   const t = !1 === e?.newRequestsAllowed,
@@ -28130,7 +28131,7 @@ if(!gc.remoteSessionStarted || !gc.sessionId) return;
 async function Cx(e = {}) {
 if(gc.remoteSessionStartPromise) await gc.remoteSessionStartPromise;
   if(!gc.remoteSessionStarted || !gc.sessionId) return false;
-  const current=gc.sessionId, remote=await TextamisuPipeline.session(current), value=await TextamisuApi.session(remote.sessionId);
+  const current=gc.sessionId, value=await TextamisuPipeline.status(current);
   if(gc.sessionId!==current) return false;
   gc.usageHeartbeatConsecutiveFailures=0; gc.usageHeartbeatLastSuccessAtMs=Date.now();
   gc.textamisuBilling=value.billing; return true;

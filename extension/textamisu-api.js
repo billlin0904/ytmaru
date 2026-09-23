@@ -7,6 +7,7 @@
   const LANGUAGE_CODES = { eng: "en", jpn: "ja", kor: "ko", tha: "th", zh: "zh-TW", zho: "zh-TW", "zh-hant": "zh-TW", "zh-tw": "zh-TW" };
   function trusted() {
     if (!globalThis.chrome?.runtime?.id || globalThis.location?.protocol !== "chrome-extension:") throw new Error("Textamisu credentials require a trusted extension context.");
+    if (globalThis.location?.pathname === "/offscreen.html" || !chrome.storage?.local || !chrome.storage?.session) throw new Error("此擴充功能文件只能透過背景服務使用 Textamisu API。");
   }
   function normalizeBaseUrl(value) {
     let url;

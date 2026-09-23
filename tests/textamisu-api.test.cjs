@@ -49,6 +49,16 @@ test('webpage/content context cannot access credentials', async () => {
   assert.equal(calls.length, 0);
 });
 
+test('offscreen documents cannot read API credentials even when storage is present', async () => {
+  let reads=0;
+  const blockedStore={get:async()=>{reads++;throw new Error('Must not read storage');}};
+  const context=vm.createContext({location:{protocol:'chrome-extension:',pathname:'/offscreen.html'},chrome:{runtime:{id:'fixture'},storage:{local:blockedStore,session:blockedStore}},URL});
+  vm.runInContext(source,context);
+  for(const operation of [()=>context.TextamisuApi.getConfig(),()=>context.TextamisuApi.saveConfig({token:TOKEN}),()=>context.TextamisuApi.clearToken(),()=>context.TextamisuApi.credits()])
+    await assert.rejects(operation(),/只能透過背景服務/);
+  assert.equal(reads,0);
+});
+
 test('base URL validation rejects insecure hosts and embedded credentials', async () => {
   const { api } = setup();
   assert.throws(() => api.normalizeBaseUrl('http://example.com/api'), /HTTPS/);

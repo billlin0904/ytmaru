@@ -12,7 +12,7 @@ test('legacy HTTP and WebSocket paths are blocked while Textamisu and media rema
 });
 function workerFixture(active) {
  const code=fs.readFileSync('extension/service-worker.js','utf8'),start=code.indexOf('async function handleTextamisuMessage'),end=code.indexOf('\nconst e =',start),calls=[];
- const context=vm.createContext({chrome:{runtime:{id:'fixture',getURL:()=> 'chrome-extension://fixture/'}},xo:async()=>active,Zo:session=>session.tabs,
+ const context=vm.createContext({chrome:{runtime:{id:'fixture',getURL:path=> 'chrome-extension://fixture/'+(path||'')}},xo:async()=>active,Zo:session=>session.tabs,
   TextamisuPipeline:{end:async id=>calls.push({end:id}),session:async()=>({sessionId:'remote'}),language:value=>value},
   TextamisuApi:{chatTranslate:async()=>{calls.push({chat:true});return {translations:[]};}}});
  vm.runInContext(code.slice(start,end),context);

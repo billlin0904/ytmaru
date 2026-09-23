@@ -3,13 +3,56 @@ import './textamisu-api.js';
 import './textamisu-pipeline.js';
 chrome.storage.session.setAccessLevel({accessLevel:'TRUSTED_CONTEXTS'}).catch(console.error);
 async function handleTextamisuMessage(message,sender) {
+ let running;
  try {
   if(sender?.id!==chrome.runtime.id) throw new Error('無效的擴充功能來源');
   const internal=String(sender.url||'').startsWith(chrome.runtime.getURL(''));
-  if(message.type==='TEXTAMISU_SESSION_END') { if(!internal) throw new Error('無效的來源'); await TextamisuPipeline.end(message.sessionId); return {ok:true}; }
+  const privileged=['TEXTAMISU_STT','TEXTAMISU_TRANSLATE','TEXTAMISU_SESSION_STATUS','TEXTAMISU_REQUEST_ABORT','TEXTAMISU_SAVE_SEGMENT'].includes(message.type);
+  if(privileged || ['TEXTAMISU_SESSION_START','TEXTAMISU_SESSION_END'].includes(message.type)) {
+   const page=chrome.runtime.getURL('offscreen.html');
+   if(sender.url!==page && sender.url!==`${page}?runnerSessionId=${encodeURIComponent(message.sessionId)}`) throw new Error('此操作僅限字幕擷取文件');
+   textamisuIdentifier(message.sessionId);
+  }
+  if(privileged) {
+   textamisuIdentifier(message.rpcId);
+   if(message.type==='TEXTAMISU_REQUEST_ABORT') {
+    const pending=textamisuRequests.get(message.rpcId);
+    if(pending && pending.sessionId===message.sessionId && pending.senderUrl===sender.url) pending.controller.abort(new DOMException('已取消請求','AbortError'));
+    return {ok:true};
+   }
+   if(message.type!=='TEXTAMISU_SAVE_SEGMENT') {
+    if(textamisuRequests.has(message.rpcId)) throw new Error('背景請求識別碼重複');
+    running={sessionId:message.sessionId,senderUrl:sender.url,controller:new AbortController()};
+    // Register before awaiting storage so an immediate abort cannot be lost.
+    textamisuRequests.set(message.rpcId,running);
+   }
+  }
+  if(message.type==='TEXTAMISU_SESSION_END') {
+   if(!internal) throw new Error('無效的來源');
+   for(const pending of textamisuRequests.values()) if(pending.sessionId===message.sessionId) pending.controller.abort(new DOMException('字幕工作階段已結束','AbortError'));
+   await TextamisuPipeline.end(message.sessionId); return {ok:true};
+  }
   const active=await xo(message.sessionId);
   if(!active || (!internal&&!Zo(active).includes(Number(sender.tab?.id)))) throw new Error('字幕工作階段已結束');
   if(message.type==='TEXTAMISU_SESSION_START') { if(!internal) throw new Error('無效的來源'); return {ok:true,data:await TextamisuPipeline.session(message.sessionId)}; }
+  if(message.type==='TEXTAMISU_SAVE_SEGMENT') return {ok:true,data:await textamisuSaveSegment(message.sessionId,message.payload)};
+  if(running) {
+   const signal=running.controller.signal;
+   if(signal.aborted) throw signal.reason;
+   // Validate and reconstruct only the fixed operation's bounded fields. No URL,
+   // headers, credentials, remote session ID or fetch options cross this boundary.
+   const payload=message.type==='TEXTAMISU_STT' ? textamisuSttPayload(message.payload)
+    : message.type==='TEXTAMISU_TRANSLATE' ? textamisuCaptionPayload(message.payload) : null;
+   const remote=await TextamisuPipeline.session(message.sessionId);
+   if(signal.aborted) throw signal.reason;
+   if(!await xo(message.sessionId)) throw new Error('字幕工作階段已結束');
+   const result=message.type==='TEXTAMISU_STT' ? await TextamisuApi.stt(remote.sessionId,payload,{signal})
+    : message.type==='TEXTAMISU_TRANSLATE' ? await TextamisuApi.translate(remote.sessionId,payload,{signal})
+    : await TextamisuApi.session(remote.sessionId,{signal});
+   if(signal.aborted) throw signal.reason;
+   if(!await xo(message.sessionId)) throw new Error('字幕工作階段已結束');
+   return {ok:true,data:result};
+  }
   if(message.type==='TEXTAMISU_CHAT_TRANSLATE') {
    const remote=await TextamisuPipeline.session(message.sessionId), payload=message.payload||{};
    const result=await TextamisuApi.chatTranslate(remote.sessionId,{...payload,sourceLanguage:TextamisuPipeline.language(payload.sourceLanguage),targetLanguage:TextamisuPipeline.language(payload.targetLanguage)});
@@ -17,7 +60,63 @@ async function handleTextamisuMessage(message,sender) {
    return {ok:true,data:result};
   }
   return {ok:false,error:'不支援的 Textamisu 訊息'};
- } catch(error) { return {ok:false,error:error.message,code:error.code,status:error.status}; }
+ } catch(error) { return {ok:false,error:error.message,name:error.name,code:error.code,status:error.status,requestId:error.requestId}; }
+ finally { if(running && textamisuRequests.get(message.rpcId)===running) textamisuRequests.delete(message.rpcId); }
+}
+const textamisuRequests=new Map(), textamisuSaves=new Map();
+function textamisuIdentifier(value) {
+ if(typeof value!=='string'||!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value)) throw new Error('無效的背景請求識別碼');
+ return value;
+}
+function textamisuText(value,max,optional=false) {
+ if(optional && (value===undefined || value===null || value==='')) return '';
+ if(typeof value!=='string'||(!optional&&!value.trim())||value.includes('\0')||Array.from(value).length>max) throw new Error('字幕文字為空白或超過長度限制');
+ return value;
+}
+function textamisuSttPayload(payload={}) {
+ const encoded=payload.audioBase64;
+ if(typeof encoded!=='string'||encoded.length<4328||encoded.length>1280060||encoded.length%4||!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded)||payload.audioSpeed!==1) throw new Error('無效或過大的 WAV 音訊');
+ const raw=atob(encoded),bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
+ if(bytes.length<3244||bytes.length>960044) throw new Error('音訊長度須介於 0.1 至 30 秒');
+ const samples=TextamisuPipeline.wavSamples(bytes.buffer);
+ if(!samples||samples.length<1600||samples.length>480000) throw new Error('音訊須為 16kHz 單聲道 PCM WAV');
+ return {audio:new Blob([bytes],{type:'audio/wav'}),mimeType:'audio/wav',requestId:textamisuIdentifier(payload.requestId),sourceLanguage:TextamisuPipeline.language(textamisuText(payload.sourceLanguage,32)),audioSpeed:1};
+}
+function textamisuCaptionPayload(payload={}) {
+ if(!Array.isArray(payload.sttRequestIds)||payload.sttRequestIds.length<1||payload.sttRequestIds.length>12) throw new Error('字幕須有 1 至 12 筆語音辨識來源');
+ return {requestId:textamisuIdentifier(payload.requestId),sttRequestIds:payload.sttRequestIds.map(textamisuIdentifier),text:textamisuText(payload.text,4000),sourceLanguage:TextamisuPipeline.language(textamisuText(payload.sourceLanguage,32)),targetLanguage:TextamisuPipeline.language(textamisuText(payload.targetLanguage,32)),previousSourceContext:textamisuText(payload.previousSourceContext,1500,true)};
+}
+async function textamisuSaveSegment(localId,payload={}) {
+ const metadata=payload.metadata||{},input=payload.segment||{},segment={};
+ const fields={original:8000,translation:8000,language:32,translatedTo:32,segmentationMethod:120,splitReason:256,requestId:200,createdAt:64};
+ for(const [key,max] of Object.entries(fields)) if(input[key]!==undefined) segment[key]=input[key]===null ? null : textamisuText(input[key],max,true);
+ for(const key of ['order','mediaTime','displayAfterMediaTime','audioStartMediaTime','audioEndMediaTime']) if(input[key]!==undefined) {
+  if(input[key]!==null && (typeof input[key]!=='number'||!Number.isFinite(input[key])||Math.abs(input[key])>1e12)) throw new Error('無效的字幕時間');
+  segment[key]=input[key];
+ }
+ if(input.latency!==undefined) {
+  if(input.latency===null) segment.latency=null;
+  else {
+   if(typeof input.latency!=='object'||Array.isArray(input.latency)||Object.keys(input.latency).length>64) throw new Error('無效的字幕延遲資料');
+   segment.latency={};
+   for(const [key,value] of Object.entries(input.latency)) {
+    if(!/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(key)||(value!==null&&!['number','string','boolean'].includes(typeof value))||typeof value==='number'&&!Number.isFinite(value)||typeof value==='string'&&value.length>200) throw new Error('無效的字幕延遲資料');
+    Object.defineProperty(segment.latency,key,{value,enumerable:true});
+   }
+  }
+ }
+ const initial={sessionId:localId,pageUrl:textamisuText(metadata.pageUrl,4096,true),pageTitle:textamisuText(metadata.pageTitle,1000,true),sourceLang:textamisuText(metadata.sourceLang,32,true),targetLang:textamisuText(metadata.targetLang,32,true),startedAt:textamisuText(metadata.startedAt,64,true)||new Date().toISOString(),savedTo:'local-mvp-fallback',segments:[]};
+ const prior=textamisuSaves.get(localId)||Promise.resolve();
+ const pending=prior.catch(()=>{}).then(async()=>{
+  const key=`liveSubtitleSession:${localId}`,saved=(await chrome.storage.local.get(key))[key]||initial;
+  if(!Array.isArray(saved.segments)) saved.segments=[];
+  if(saved.segments.length>=10000) throw new Error('本機字幕已達儲存上限');
+  saved.segments.push(segment);saved.updatedAt=new Date().toISOString();
+  if(JSON.stringify(saved).length>4*1024*1024) throw new Error('本機字幕已達儲存上限');
+  await chrome.storage.local.set({[key]:saved});return {saved:true};
+ });
+ textamisuSaves.set(localId,pending);
+ try { return await pending; } finally { if(textamisuSaves.get(localId)===pending) textamisuSaves.delete(localId); }
 }
 const e = new Map(),
   t = "offscreen.html",

@@ -16,6 +16,8 @@ Token 只存在擴充功能的 `chrome.storage.session`，關閉瀏覽器後需�
 
 0.2.2 在 API 回傳 HTML 或其他非 JSON 內容時，會顯示請求方法、接口類型、HTTP 狀態與回應格式，避免只看到「未回傳 JSON」。缺少即時接口時仍須部署後端，更新插件本身不會新增伺服器接口。付費請求恢復時，僅在伺服器明確回傳 `operation_not_found` 才重送同一筆請求；一般網頁 404 不作為重送依據。
 
+0.2.3 修正真正背景收音頁無法使用 `chrome.storage` 而導致的語音辨識錯誤。收音頁透過訊息交由 service worker 呼叫 Textamisu；API token 留在 service worker，不傳給收音頁或網頁。更新後請在外掛管理頁重新載入 ytmaru，再重新整理影片頁面；若 token 已因重新載入而清除，請在外掛設定重新輸入。
+
 ## API 與計費
 
 | 功能 | API | 用量 |
@@ -34,7 +36,7 @@ Token 只存在擴充功能的 `chrome.storage.session`，關閉瀏覽器後需�
 
 - 後端翻譯支援英語、日語、韓語、泰語、繁體中文。語音可選自動偵測；字幕翻譯使用該段辨識回傳的語言。
 - 聊天室須明確指定來源語言；現有翻譯服務尚無混合語言自動偵測。錯誤會直接顯示，不會猜測或改呼叫其他供應商。
-- 上游提供片段時間碼，尚未提供逐字時間碼；維持片段字幕時間，不產生假的逐字時間。
+- 保留上游提供的片段時間碼；後端有回傳真實逐字時間碼時一併使用，不產生假的逐字時間。
 - 原服務的 Google／匿名登入、雙錢包、遠端共享字幕、雲端字幕快取與自動背景研究沒有對應的 Textamisu API，已停用。舊供應商的網路路徑另外設有阻擋，沒有轉送或備援。
 - 延遲取決於 Textamisu 的語音與翻譯服務；固定同步延遲需實際使用時調整。
 
@@ -48,6 +50,6 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-瀏覽器測試使用獨立暫存 profile、假 token 與攔截的 API 回應，不連使用者帳號，也不扣實際點數。可設定 `YTMARU_BROWSER_CHANNEL=msedge` 使用已安裝的 Edge。這些測試不等於已驗證正式上游服務的延遲或辨識品質。
+瀏覽器測試使用獨立暫存 profile、假 token 與攔截的 API 回應，不連使用者帳號，也不扣實際點數。透過 `chrome.offscreen.createDocument` 建立真正的背景收音文件，驗證主文件與多分頁 runner 的辨識、翻譯、用量、儲存與停止流程；不以一般擴充功能分頁代替 offscreen。可設定 `YTMARU_BROWSER_CHANNEL=msedge` 使用已安裝的 Edge。這些測試不等於已驗證正式上游服務的延遲或辨識品質。
 
 `extension/` 以本機安裝的 Subruu 0.1.75.4 打包檔案為遷移基礎，保留媒體與字幕功能；新增的 Textamisu 接口、驗證與計費由本專案維護。

@@ -3,18 +3,39 @@
   const language = (value) => ({eng:'en',jpn:'ja',kor:'ko',tha:'th',zho:'zh-TW',cmn:'zh-TW',zh:'zh-TW','zh-tw':'zh-TW'}[String(value).toLowerCase()] || value || 'auto');
   const sessionKey = (id) => `textamisuLive:${id}`;
   const starting = new Map();
+  const inDocument = () => typeof document !== 'undefined';
+  function abortError(signal) { return signal?.reason || new DOMException('已取消請求','AbortError'); }
+  function rpc(type, localId, payload, signal) {
+    if (signal?.aborted) return Promise.reject(abortError(signal));
+    const rpcId=crypto.randomUUID();
+    return new Promise((resolve,reject) => {
+      const abort=() => {
+        chrome.runtime.sendMessage({type:'TEXTAMISU_REQUEST_ABORT',sessionId:localId,rpcId}).catch(()=>{});
+        reject(abortError(signal));
+      };
+      signal?.addEventListener('abort',abort,{once:true});
+      chrome.runtime.sendMessage({type,sessionId:localId,rpcId,...(payload ? {payload} : {})}).then(reply => {
+        if (signal?.aborted) return reject(abortError(signal));
+        if (!reply?.ok) return reject(Object.assign(new Error(reply?.error||'Textamisu 背景請求失敗'),{name:reply?.name||'Error',status:reply?.status,code:reply?.code,requestId:reply?.requestId}));
+        resolve(reply.data);
+      },reject).finally(()=>signal?.removeEventListener('abort',abort));
+    });
+  }
+  function audioBase64(bytes) {
+    const data=new Uint8Array(bytes),parts=[];
+    for(let offset=0;offset<data.length;offset+=32768) parts.push(String.fromCharCode(...data.subarray(offset,offset+32768)));
+    return btoa(parts.join(''));
+  }
   async function session(localId) {
     if (!localId) throw new Error('缺少字幕工作階段');
+    // Real offscreen documents only have chrome.runtime. Never read storage or
+    // credentials there, including the runner iframe used by concurrent tabs.
+    if (inDocument()) return rpc('TEXTAMISU_SESSION_START',localId);
     const key = sessionKey(localId);
     const saved = (await chrome.storage.session.get(key))[key];
     if (saved?.sessionId) return saved;
     // Only the service worker creates sessions, so chat and audio starting at
     // the same time cannot create two separately rounded billing sessions.
-    if (typeof document !== 'undefined') {
-      const reply=await chrome.runtime.sendMessage({type:'TEXTAMISU_SESSION_START',sessionId:localId});
-      if(!reply?.ok) throw Object.assign(new Error(reply?.error||'Textamisu 工作階段建立失敗'),{status:reply?.status,code:reply?.code});
-      return reply.data;
-    }
     if (!starting.has(localId)) starting.set(localId, (async () => {
       const value = await TextamisuApi.startSession();
       await chrome.storage.session.set({[key]:value});
@@ -23,6 +44,10 @@
     return starting.get(localId);
   }
   async function end(localId) {
+    if (inDocument()) return rpc('TEXTAMISU_SESSION_END',localId);
+    // A stop can race the first start request; wait for its stored ID before
+    // closing it instead of leaving an orphaned remote session.
+    if (starting.has(localId)) await starting.get(localId);
     const key = sessionKey(localId);
     const value = (await chrome.storage.session.get(key))[key];
     if (!value?.sessionId) return;
@@ -71,7 +96,8 @@
     return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)), n=>n.toString(16).padStart(2,'0')).join('');
   }
   async function stt(localId, input, metadata, signal) {
-    const remote=await session(localId), samples=await normalizeAudio(input), parts=[];
+    if(signal?.aborted) throw abortError(signal);
+    const remote=inDocument() ? null : await session(localId), samples=await normalizeAudio(input), parts=[];
     if (!samples.length) throw new Error('音訊是空的');
     for(let offset=0;offset<samples.length;) {
       if(signal?.aborted) throw new DOMException('已取消辨識','AbortError');
@@ -84,7 +110,10 @@
       // timeline generations must be distinct even when their audio is identical.
       const key=new TextEncoder().encode(`${metadata.requestId||metadata.segmentId||''}:${metadata.timelineRevision||0}:${metadata.sourceLang||'auto'}:${metadata.audioSpeed||1}:${offset}:${await digest(wav)}`);
       const requestId=`stt-${await digest(key)}`;
-      const result=await TextamisuApi.stt(remote.sessionId,{audio:new Blob([wav],{type:'audio/wav'}),mimeType:'audio/wav',requestId,sourceLanguage:language(metadata.sourceLang),audioSpeed:Number(metadata.audioSpeed)||1},{signal});
+      const payload={requestId,sourceLanguage:language(metadata.sourceLang),audioSpeed:Number(metadata.audioSpeed)||1};
+      const result=inDocument()
+        ? await rpc('TEXTAMISU_STT',localId,{...payload,audioBase64:audioBase64(wav)},signal)
+        : await TextamisuApi.stt(remote.sessionId,{...payload,audio:new Blob([wav],{type:'audio/wav'}),mimeType:'audio/wav'},{signal});
       parts.push({...result,offset:offset/16000,requestId});
       offset=end;
     }
@@ -95,5 +124,16 @@
       durationMs:parts.reduce((n,p)=>n+(p.durationMs||0),0),billableDurationMs:parts.reduce((n,p)=>n+(p.billableDurationMs||0),0),
       audioSpeed:Number(metadata.audioSpeed)||1,billing:parts.at(-1)?.billing};
   }
-  globalThis.TextamisuPipeline={language,session,end,stt,encodeWav,wavSamples,normalizeAudio};
+  async function translate(localId,payload,{signal}={}) {
+    if(inDocument()) return rpc('TEXTAMISU_TRANSLATE',localId,payload,signal);
+    return TextamisuApi.translate((await session(localId)).sessionId,payload,{signal});
+  }
+  async function status(localId,{signal}={}) {
+    if(inDocument()) return rpc('TEXTAMISU_SESSION_STATUS',localId,undefined,signal);
+    return TextamisuApi.session((await session(localId)).sessionId,{signal});
+  }
+  function saveSegment(localId,metadata,segment) {
+    return rpc('TEXTAMISU_SAVE_SEGMENT',localId,{metadata,segment});
+  }
+  globalThis.TextamisuPipeline={language,session,end,stt,translate,status,saveSegment,encodeWav,wavSamples,normalizeAudio};
 })();
