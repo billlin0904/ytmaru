@@ -120,19 +120,22 @@ test('unsupported research never dispatches and billing uses only server-reporte
 
 test('both chat entry points reach the adapter without reading credentials', async () => {
   for (const [file, functionName, nextName, initial] of [
-    ['content-script.js', 'vs', 'Ms', 'let n = null, Z = 1; const F = { sessionId: "local", chatPanelOpen: true, usage: {} };'],
-    ['mirror-viewer.js', 'Br', 'Pr', 'let Ue = null, o = "local", We = 1, re = false, De = {}; const Ne = { open: true }, Ie = { open: false }; function Ca() {}'],
+    ['content-script.js', 'vs', 'Ms', 'let n = null, Z = 1; const F = { sessionId: "local", chatPanelOpen: true, usage: {} }; function chatSourceLanguage() { return globalThis.chosenLanguage; }'],
+    ['mirror-viewer.js', 'Br', 'Pr', 'let Ue = null, o = "local", We = 1, re = false, De = {}; const Ne = { open: true }, Ie = { open: false }; function Ca() {} function getChatSourceLanguage() { return globalThis.chosenLanguage; }'],
   ]) {
     const text = fs.readFileSync(path.join(extension, file), 'utf8');
     const start = text.indexOf(`  async function ${functionName}(e, t = {}) {`);
     const after = text.indexOf(`function ${nextName}(`, start);
     const end = text.lastIndexOf('\n  ', after);
-    const scope = { SubruuWalletInteractions: api, setTimeout, clearTimeout };
+    const scope = { SubruuWalletInteractions: api, setTimeout, clearTimeout, chosenLanguage:'en' };
     vm.createContext(scope);
     let calls = 0;
     scope.SubruuWalletInteractions = { create: () => ({ translate: async ctx => { calls++; assert.equal(ctx.headers, undefined); assert.equal(ctx.sessionId, 'local'); return { translation: 'ok' }; } }), usageSnapshot: (_, previous) => previous };
     vm.runInContext(initial + '\n' + text.slice(start, end) + `\nglobalThis.run = ${functionName};`, scope);
     assert.equal((await scope.run({ mode: 'live-chat', text: 'a' })).translation, 'ok');
     assert.equal(calls, 1);
+    scope.chosenLanguage='';
+    await assert.rejects(scope.run({mode:'live-chat',text:'a'}),/請先選擇留言原文語言/);
+    assert.equal(calls,1,'the final dispatch boundary must reject unselected chat language before contacting the paid adapter');
   }
 });

@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const source = readFileSync(join(__dirname, '../extension/textamisu-api.js'), 'utf8');
 const TOKEN = 'pt_sk_test_credential';
 
-function setup(responses = [], protocol = 'chrome-extension:') {
+function setup(responses = [], protocol = 'chrome-extension:', globals = {}) {
   const local = {}, session = { ytmaruTextamisuToken: TOKEN }, calls = [], access = [];
   const store = (values, name) => ({
     get: async key => ({ [key]: values[key] }),
@@ -25,6 +25,7 @@ function setup(responses = [], protocol = 'chrome-extension:') {
       if (typeof next === 'function') return next(url, init);
       return new Response(next.raw === undefined ? JSON.stringify(next.body ?? {}) : next.raw, { status: next.status || 200, headers: { 'Content-Type': 'application/json', 'Retry-After': '0.001', ...next.headers } });
     },
+    ...globals,
   });
   vm.runInContext(source, context);
   return { api: context.TextamisuApi, local, session, calls, access };
@@ -271,9 +272,17 @@ test('only a confirmed missing operation allows retrying the identical POST body
 });
 
 test('recovery honors the original deadline without issuing another POST', async () => {
-  const { api, calls } = setup([new TypeError('Lost POST'), { status: 503 }]);
+  // Advance only the deadline clock at response boundaries. Real 15ms wall
+  // timers can fire early and permit another harmless GET on busy CI hosts.
+  let now=1000;
+  class DeadlineClock extends Date { static now() { return now; } }
+  const { api, calls } = setup([
+    () => { now=1002;throw new TypeError('Lost POST'); },
+    () => { now=1015;return new Response('{}',{status:503,headers:{'Content-Type':'application/json'}}); },
+  ],'chrome-extension:',{Date:DeadlineClock});
   await assert.rejects(api.translate('s', { requestId: 'deadline-id', text: 'Hello' }, { pollTimeoutMs: 15 }), error => error.code === 'operation_pending' && error.requestId === 'deadline-id');
   assert.deepEqual(calls.map(call => call.method), ['POST', 'GET']);
+  assert.equal(now,1015,'recovery must use the original deadline, not start a fresh budget');
 });
 
 test('402 and unrelated 409 are not retried', async () => {

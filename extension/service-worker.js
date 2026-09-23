@@ -8698,10 +8698,11 @@ async function Ls(e, t = "") {
   }
   const r = [],
     i = new Set();
-  let s = !1;
+  let s = !1, chatReplay = false;
   for (const e of n || []) {
     const a = e?.result || {};
     a.isLiveChatFrame && (s = !0);
+    a.chatReplay === true && (chatReplay = true);
     for (const e of a.messages || []) {
       const a = Rs(e.text);
       if (!a) continue;
@@ -8771,7 +8772,7 @@ async function Ls(e, t = "") {
         code: "chat-helper-unavailable",
         error: "聊天室擷取元件尚未就緒，稍後會自動重試。",
       }
-    : { ok: !0, scannedLiveChatFrame: s, messages: r.slice(-80) };
+    : { ok: !0, scannedLiveChatFrame: s, chatAvailable: s, chatReplay, messages: r.slice(-80) };
 }
 async function As(e = {}, t = {}) {
   const a = await Vo(e, t),
@@ -9026,8 +9027,21 @@ function Ds(e = "") {
       ...h.map((e) => ({ node: e, message: o(e) })),
       ...p.map((e) => ({ node: e, message: u(e) })),
     ];
+  const chatUrls=[location.href,...Array.from(document.querySelectorAll('iframe[src]'),frame=>frame.getAttribute('src'))];
+  let chatReplay=false, youtubeChatFrame=false;
+  for(const value of chatUrls) {
+    try {
+      const url=new URL(value,location.href);
+      if((url.hostname==='youtube.com'||url.hostname.endsWith('.youtube.com')) && /^\/live_chat(?:_replay)?\/?$/.test(url.pathname)) {
+        youtubeChatFrame=true;
+        if(url.pathname.includes('_replay')) chatReplay=true;
+      }
+    } catch {}
+  }
+  const onYouTube=location.hostname==='youtube.com'||location.hostname.endsWith('.youtube.com');
   return {
-    isLiveChatFrame: b,
+    isLiveChatFrame: onYouTube ? youtubeChatFrame || Boolean(document.querySelector('yt-live-chat-app')) || g.length>0 : b,
+    chatReplay,
     messages: (e
       ? SubruuLiveChat.trackSourceMessages(`${e}:${location.href}`, y)
       : y.map((e) => e.message)

@@ -104,6 +104,7 @@
             雙語</button
           ><button
             id="chatToggleButton"
+            hidden
             data-action="chat-toggle"
             type="button"
             title="直播聊天：留言翻譯與寫回覆"
@@ -339,6 +340,7 @@
             role="region"
             aria-label="直播留言翻譯"
           >
+            <div>
             <div class="live-chat-header">
               <div class="live-chat-title">留言翻譯</div>
               <div class="live-chat-header-actions">
@@ -353,6 +355,18 @@
                   到底</button
                 ><span class="live-chat-batch-note">2s 批次翻譯</span>
               </div>
+            </div>
+            <label class="settings-field" style="margin:10px 0 0">
+              <span class="settings-label">留言原文語言</span>
+              <select id="chatSourceLanguage" data-chat-source-language aria-label="留言原文語言" style="width:100%;min-height:32px;padding:5px 9px;border:1px solid var(--ov-border);border-radius:7px;background:var(--ov-surface);color:var(--ov-text);font-family:inherit;font-size:12px;font-weight:600">
+                <option value="">選擇留言原文語言</option>
+                <option value="en">英語</option>
+                <option value="ja">日語</option>
+                <option value="ko">韓語</option>
+                <option value="th">泰語</option>
+                <option value="zh-TW">中文</option>
+              </select>
+            </label>
             </div>
             <div id="chatList" class="live-chat-list" aria-live="polite"></div>
             <div id="chatStatus" class="live-chat-status">

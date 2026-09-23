@@ -6,10 +6,15 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
  fs.cpSync(path.resolve('extension'),extension,{recursive:true});
  // Seed local session ownership in the isolated fixture without requesting a
  // real tabCapture grant. This hook exists only in this temporary test copy.
- fs.appendFileSync(path.join(extension,'service-worker.js'),'\nglobalThis.__ytmaruSeedSessions = value => { nt=value; at=value[0]||null; };\nglobalThis.__ytmaruPendingRequests = () => textamisuRequests.size;\n');
+ fs.appendFileSync(path.join(extension,'service-worker.js'),'\nglobalThis.__ytmaruSeedSessions = value => { nt=value; at=value[0]||null; };\nglobalThis.__ytmaruSessionSourceLang = id => nt.find(session=>session.sessionId===id)?.config?.sourceLang;\nglobalThis.__ytmaruPendingRequests = () => textamisuRequests.size;\n');
  fs.copyFileSync(path.join(__dirname,'native-offscreen-fixture.js'),path.join(extension,'native-offscreen-fixture.js'));
  const offscreenHtml=path.join(extension,'offscreen.html');
  fs.writeFileSync(offscreenHtml,fs.readFileSync(offscreenHtml,'utf8').replace('</body>','<script src="native-offscreen-fixture.js"></script></body>'));
+ // Chat UI tests use synthetic finite media instead of a user capture stream.
+ // Seed only its playback clock; normal mirror UI and chat dispatch still run.
+ const mirrorScript=path.join(extension,'mirror-viewer.js');
+ fs.writeFileSync(mirrorScript,fs.readFileSync(mirrorScript,'utf8').replace('  globalThis.__LIVE_SUBTITLE_MIRROR_VIEWER_TEST__',
+  '  globalThis.__ytmaruSeedMirrorMedia = () => { ae=true; ie=false; const start=Date.now()-S.video.currentTime*1000; ne=[{videoStartSeconds:0,videoEndSeconds:60,sourceStartWallTimeMs:start,sourceEndWallTimeMs:start+60000}]; };\n  globalThis.__LIVE_SUBTITLE_MIRROR_VIEWER_TEST__'));
  const context=await chromium.launchPersistentContext(path.join(fixture,'profile'),{channel:process.env.YTMARU_BROWSER_CHANNEL||'chromium',headless:true,args:['--disable-extensions-except='+extension,'--load-extension='+extension]});
  try {
  fs.mkdirSync('test-results',{recursive:true}); const requests=[],errors=[],quotaResults=[],requestOwners=[];
@@ -228,6 +233,7 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
   await tab.close();balanceFixture=null;
  }
  for(const surface of ['content','mirror'])for(const mode of ['ready','pending','missing'])await quotaCase(surface,mode);
+ const replayChatResults=await require('./chat-replay-browser.cjs')({context,worker,id,billing,waitUntil});
 
  const popup=await context.newPage();popup.on('pageerror',error=>errors.push(error.message));
  await popup.goto(`chrome-extension://${id}/popup.html`);
@@ -235,7 +241,7 @@ const fs=require('fs'),os=require('os'),path=require('path'),assert=require('ass
  assert.equal(await popup.locator('#statusLabel').innerText(),'待命');
  assert.equal(await popup.locator('#authState').innerText(),'已連線');
  assert.equal(await popup.locator('#accountBalance').innerText(),'100');
- const report={id,result,nativeRunner,aborted,chat,ended,missingSessionRoute,quotaResults,requests,errors};
+ const report={id,result,nativeRunner,aborted,chat,ended,missingSessionRoute,quotaResults,replayChatResults,requests,errors};
  fs.writeFileSync('test-results/browser-smoke.json',JSON.stringify(report,null,2));
  console.log(JSON.stringify(report,null,2));
  await popup.screenshot({path:'test-results/popup.png',fullPage:true});

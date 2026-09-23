@@ -92,7 +92,7 @@
             if (!response?.ok) {
               const code = response?.code || response?.error?.code || (typeof response?.error === "string" ? response.error : "chat_translation_failed");
               const message = code === "source_language_required"
-                ? "聊天室需要明確的原文語言，請在字幕設定選擇語言後再試。"
+                ? "聊天室需要明確的原文語言，請在「留言原文語言」選擇語言後再試。"
                 : code === "target_language_required"
                   ? "請先選擇回覆的目標語言。"
                   : response?.error?.message || response?.message || (typeof response?.error === "string" ? response.error : "聊天室翻譯失敗，請稍後再試。");

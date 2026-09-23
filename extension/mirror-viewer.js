@@ -105,6 +105,7 @@
       chatBottom: document.getElementById("chatBottomButton"),
       chatList: document.getElementById("chatList"),
       chatStatus: document.getElementById("chatStatus"),
+      chatSourceLanguage: document.getElementById("chatSourceLanguage"),
       replyPanel: document.getElementById("replyPanel"),
       replyTarget: document.getElementById("replyTarget"),
       replyInput: document.getElementById("replyInput"),
@@ -213,6 +214,9 @@
     })(),
     Ne = {
       open: !1,
+      sourceLanguage: null,
+      available: false,
+      replay: false,
       items: [],
       status: "按「聊」後開始翻譯直播聊天室",
       error: "",
@@ -241,6 +245,7 @@
     je = !1,
     Ke = null,
     Je = !1;
+  let chatPresenceTimer = null, chatPresencePending = false;
   const Ge = new Set(),
     Ye = new Set(),
     Xe = [];
@@ -317,6 +322,7 @@
           .catch(() => {}));
   }
   function at(t = {}) {
+    const previousChatLanguage = getChatSourceLanguage();
     ((ke = { ...(ke || {}), ...t }),
       ir(),
       Va(t),
@@ -327,6 +333,10 @@
       Qa(),
       Ha(),
       jr());
+    if (previousChatLanguage !== getChatSourceLanguage()) { Cr(); sa(); }
+    Yr();
+    Tr();
+    refreshMirrorChatPresence();
   }
   function ot() {
     return "twitch-hls" === L || "twitch-hls" === ke?.nativeStreamDelayKind;
@@ -3109,7 +3119,7 @@
     S.panel.classList.toggle("single-line-mode", e < t);
   }
   function vr(e) {
-    ((Ne.open = Boolean(e)),
+    ((Ne.open = Boolean(e) && Ne.available),
       Ne.open
         ? ((Ne.status = Ne.items.length
             ? Ne.status
@@ -3134,7 +3144,7 @@
       (S.replyToggle.title = Ie.open ? "隱藏回覆翻譯" : "展開回覆翻譯"));
   }
   function Tr() {
-    Ne.open &&
+    Ne.open && getChatSourceLanguage() &&
       !Ae &&
       (Dr(),
       (Ae = window.setInterval(Dr, 1500)),
@@ -3189,7 +3199,7 @@
     }
   }
   async function Dr() {
-    if (!Ne.open || Oe || re) return;
+    if (!Ne.open || !getChatSourceLanguage() || Oe || re) return;
     const e = We;
     Oe = !0;
     try {
@@ -3204,6 +3214,7 @@
         { ok: !1, timeout: !0 },
       );
       if (e !== We) return;
+      if (t?.ok) applyMirrorChatPresence(t);
       if (!t?.ok)
         return (
           (Ne.status =
@@ -3228,14 +3239,14 @@
         : [];
       if (!n.length)
         return (
-          (Ne.status = t.scannedLiveChatFrame
+          (!Ne.error && (Ne.status = t.scannedLiveChatFrame
             ? `等待 ${ia()} 聊天室留言...`
-            : "找不到聊天室，請確認來源分頁聊天室已展開。"),
+            : "找不到聊天室，請確認來源分頁聊天室已展開。")),
           void Yr()
         );
       let r = 0;
       for (const e of n) Ur(e) && (r += 1);
-      r && ((Ne.status = `已擷取 ${Ne.items.length} 則留言，翻譯中...`), Yr());
+      r && (Ne.error || (Ne.status = `已擷取 ${Ne.items.length} 則留言，翻譯中...`), Yr());
     } catch (e) {
       ((Ne.status = e.message || "聊天室擷取失敗"),
         (Ne.error = Ne.status),
@@ -3293,7 +3304,7 @@
     );
   }
   function xr(e = {}) {
-    if (!Ne.open || !Xe.length || _e) return;
+    if (!Ne.open || !getChatSourceLanguage() || !Xe.length || _e) return;
     const t =
       Boolean(e.immediate) ||
       (function (e = []) {
@@ -3360,7 +3371,7 @@
   }
   async function Ir(e = [], t = {}) {
     const n = Number.isFinite(Number(t.generation)) ? Number(t.generation) : We;
-    if (n !== We) return;
+    if (n !== We || !Ne.open || !getChatSourceLanguage()) return;
     const r = e.filter((e) => e && Ne.items.some((t) => t.id === e.id));
     if (r.length) {
       for (const e of r) e.status = "translating";
@@ -3379,7 +3390,7 @@
               n = t.reduce((e, t) => e + oa(t), 0);
             return {
               text: JSON.stringify(t),
-              sourceLang: ua(ke.sourceLang || "auto", "auto", { keepAuto: !0 }),
+              sourceLang: getChatSourceLanguage(),
               targetLang: ua(ke.targetLang || "zh", "zh", {
                 keepTraditionalChinese: !0,
               }),
@@ -3491,7 +3502,7 @@
           ea());
       } catch (e) {
         if (n !== We) return;
-        if (!1 === t.lease?.isCurrent()) return;
+        if (!Ne.open || re) return;
         for (const e of r)
           (SubruuLiveChat.expireTranslation(e, "request-failed"),
             Ye.delete(e.key));
@@ -3513,6 +3524,11 @@
   }
   async function Br(e, t = {}) {
     const sessionId = o, generation = We;
+    if (e.mode !== "reply") {
+      const sourceLanguage = getChatSourceLanguage();
+      if (!sourceLanguage) throw new Error("請先選擇留言原文語言，才能開始翻譯。");
+      e = { ...e, sourceLang: sourceLanguage };
+    }
     if (!globalThis.SubruuWalletInteractions)
       throw new Error("請重新載入插件後再使用互動翻譯。");
     Ue ||= globalThis.SubruuWalletInteractions.create();
@@ -3879,11 +3895,12 @@
       (S.replyCopy.disabled = Ie.busy || !to(Ie.translation)),
       S.replySend &&
         ((S.replySend.disabled =
-          Ie.busy ||
+          isChatReplay() || !Ne.available || Ie.busy ||
           Ie.sending ||
           !to(Ie.text) ||
           (Ie.lastSentSession === o && Ie.lastSentText === Ie.text)),
-        (S.replySend.textContent = Ie.sending ? "處理中…" : "翻譯並送出")),
+        (S.replySend.textContent = Ie.sending ? "處理中…" : "翻譯並送出"),
+        (S.replySend.title = isChatReplay() ? "聊天室重播無法送出訊息" : "翻譯並送出到原聊天室")),
       Ie.sending &&
         ((S.replyTranslate.disabled = !0), (S.replyCopy.disabled = !0)),
       (S.replyInput.readOnly = Boolean(Ie.sending)));
@@ -3960,9 +3977,12 @@
     return y[e] || e || "-";
   }
   function Yr() {
+    const language = getChatSourceLanguage();
+    if (S.chatSourceLanguage) S.chatSourceLanguage.value = language;
+    if (Ne.open && !language) Ne.status = "請先選擇留言原文語言，才能開始翻譯。";
     (S.chatPanel.classList.toggle("open", Ne.open),
       S.chatPanel.classList.toggle("error", Boolean(Ne.error)),
-      (S.chatStatus.textContent = `精選翻譯 · ${Ne.status || `等待 ${ia()} 聊天室留言...`}`),
+      (S.chatStatus.textContent = `精選翻譯 · ${Ne.error || Ne.status || `等待 ${ia()} 聊天室留言...`}`),
       Xr());
   }
   function Xr() {
@@ -4005,7 +4025,9 @@
       return (
         (t.className = "live-chat-translation"),
         (t.textContent =
-          a > 0
+          !getChatSourceLanguage()
+            ? "請先選擇留言原文語言，才能開始翻譯。"
+            : a > 0
             ? `翻譯中 ${Ra(a)} 則聊天室留言...`
             : `等待 ${ia()} 聊天室留言...`),
         e.appendChild(t),
@@ -4118,6 +4140,44 @@
   }
   function oa(e = {}) {
     return Array.from(`${e.author || ""} ${e.text || ""}`).length;
+  }
+  function getChatSourceLanguage() {
+    const raw = Ne.sourceLanguage === null ? ke.sourceLang : Ne.sourceLanguage;
+    return ({ en: "en", eng: "en", ja: "ja", jpn: "ja", ko: "ko", kor: "ko",
+      th: "th", tha: "th", zh: "zh-TW", zho: "zh-TW", cmn: "zh-TW",
+      "zh-tw": "zh-TW", "zh-hant": "zh-TW" })[String(raw || "").trim().toLowerCase()] || "";
+  }
+  function changeChatSourceLanguage(value = S.chatSourceLanguage?.value || "") {
+    Ne.sourceLanguage = typeof value === "string" ? value : S.chatSourceLanguage?.value || "";
+    Cr();
+    sa();
+    Ne.status = getChatSourceLanguage() ? "等待聊天室新留言..." : "請先選擇留言原文語言，才能開始翻譯。";
+    Yr();
+    Tr();
+  }
+  function isChatReplay() {
+    return Ne.replay || (Ne.available && ia() === "YouTube" && ke.sourceIsLiveStream === false);
+  }
+  function applyMirrorChatPresence(result = {}) {
+    if (!result.ok) return;
+    Ne.available = Boolean(result.chatAvailable ?? result.scannedLiveChatFrame);
+    Ne.replay = Boolean(result.chatReplay);
+    S.chatToggle.hidden = !Ne.available;
+    S.chatToggle.disabled = !Ne.available;
+    S.chatToggle.setAttribute("aria-hidden", String(!Ne.available));
+    S.chatToggle.title = Ne.available ? "聊天室：留言翻譯與寫回覆" : "此頁面沒有可讀取的聊天室";
+    if (!Ne.available && (Ne.open || Ie.open)) { sa(); wr(); }
+    jr();
+  }
+  async function refreshMirrorChatPresence() {
+    if (re || Je || chatPresencePending || (Ne.open && getChatSourceLanguage())) return;
+    chatPresencePending = true;
+    try {
+      const result = await ma(chrome.runtime.sendMessage({
+        type: "LIVE_CHAT_SCAN_FRAMES", sessionId: o, source: "active-session",
+      }), 3000, { ok: false });
+      if (!re && !Je) applyMirrorChatPresence(result);
+    } catch {} finally { chatPresencePending = false; }
   }
   function ia() {
     const e = String(ke.videoPlatform || ke.platform || "")
@@ -4887,6 +4947,7 @@
       Ca(De));
   }
   function Za() {
+    if (chatPresenceTimer) { window.clearInterval(chatPresenceTimer); chatPresenceTimer = null; }
     (xe?.stop(),
       I && (window.clearTimeout(I), (I = null)),
       (A = null),
@@ -5037,6 +5098,15 @@
           ae = Boolean(e);
         },
         liveChatMessageKey: aa,
+        getChatSourceLanguage,
+        changeChatSourceLanguage,
+        isChatReplay,
+        applyMirrorChatPresence,
+        refreshMirrorChatPresence,
+        setChatPanelOpen: vr,
+        translateLiveChatBatch: Ir,
+        scanLiveChatMessages: Dr,
+        renderLiveChat: Yr,
         enqueueLiveChatMessage: Ur,
         resetMirrorLiveChatState: sa,
         getLiveChatDebugState: () => ({
@@ -5044,6 +5114,12 @@
           seenCount: Ge.size,
           pendingCount: Ye.size,
           queueLength: Xe.length,
+          sourceLanguage: getChatSourceLanguage(),
+          speechSourceLanguage: ke.sourceLang,
+          available: Ne.available,
+          replay: isChatReplay(),
+          error: Ne.error,
+          status: Ne.status,
         }),
         video: S.video,
       })
@@ -5150,7 +5226,9 @@
       S.chatToggle.addEventListener("click", () => {
         vr(!Ne.open);
       }),
+      S.chatSourceLanguage?.addEventListener("change", changeChatSourceLanguage),
       S.replyToggle.addEventListener("click", () => {
+        if (!Ne.available) return;
         !(function (e, t = {}) {
           ((Ie.open = Boolean(e)),
             Ie.open && !Ne.open && (Ne.open = !0),
@@ -5354,7 +5432,7 @@
         e.isTrusted &&
           (async function () {
             if (
-              Ie.busy ||
+              isChatReplay() || !Ne.available || Ie.busy ||
               Ie.sending ||
               (Ie.lastSentSession === o && Ie.lastSentText === Ie.text)
             )
@@ -5759,6 +5837,9 @@
               Qa(),
               Ha(),
               jr(),
+              Yr(),
+              refreshMirrorChatPresence(),
+              (chatPresenceTimer ||= window.setInterval(refreshMirrorChatPresence, 5000)),
               ot()
                 ? (async function (e = {}) {
                     if (re) return;
