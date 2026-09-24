@@ -6044,6 +6044,26 @@ async function si(e = {}, t = {}) {
     { ok: !0, config: r }
   );
 }
+function textamisuQueueNarration(active, segment = {}) {
+  const sessionId = String(active?.sessionId || "");
+  if (!sessionId || !String(segment?.translation || "").trim()) return;
+  const state = textamisuNarrationContext.get(sessionId) || { previousText: "", lastText: "", lastRequestedAt: 0, notificationId: "", inFlight: !1, pending: null };
+  const notificationId = String(segment?.notificationId || "");
+  if (state.notificationId === notificationId || state.pending?.notificationId === notificationId) return;
+  state.pending = { active, segment, notificationId };
+  textamisuNarrationContext.set(sessionId, state);
+  if (state.inFlight) return;
+  state.inFlight = !0;
+  void (async () => {
+    while (state.pending) {
+      const next = state.pending;
+      state.pending = null;
+      try { await textamisuNarrateDisplayed(next.active, next.segment); }
+      catch (error) { console.warn("[service-worker] narration failed:", error?.message || error); }
+    }
+    state.inFlight = !1;
+  })();
+}
 async function textamisuNarrateDisplayed(active, segment = {}) {
   const text = String(segment?.translation || "").trim().slice(0, 240);
   if (!text) return { ok: !0, ignored: !0, reason: "empty-translation" };
@@ -6076,13 +6096,9 @@ async function oi(e, t) {
   const a = await Vo(e, t);
   if (!Gi(a, e.sessionId))
     return { ok: !1, retryable: !1, reason: "session-not-active" };
-  // This event can originate from a source or mirror display tab. Once the
-  // local session is confirmed, narration must not depend on that routing.
-  try {
-    await textamisuNarrateDisplayed(a, e.segment || {});
-  } catch (error) {
-    console.warn("[service-worker] narration failed:", error?.message || error);
-  }
+  // Keep narration outside the subtitle acknowledgement path. A slow or
+  // failed voice request must never retry, delay, or stop live subtitles.
+  textamisuQueueNarration(a, e.segment || {});
   const n = t.tab?.id;
   if (a?.syncEnabled && a?.displayTabId && n !== a.displayTabId)
     return { ok: !1, retryable: !1, reason: "not-display-tab" };
