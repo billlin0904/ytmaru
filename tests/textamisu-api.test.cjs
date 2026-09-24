@@ -339,3 +339,8 @@ test('aborting pending recovery stops without another request', async () => {
   await assert.rejects(promise, error => error.name === 'AbortError');
   assert.equal(calls.length, 1);
 });
+
+test('session capacity errors are not mislabeled as request rate limits',async()=>{
+ const {api}=setup([{status:429,body:{code:'too_many_sessions',error:'limit'}}]);
+ await assert.rejects(api.startSession(),e=>e.code==='too_many_sessions' && e.message.includes('4') && !e.message.includes('過於頻繁'));
+});

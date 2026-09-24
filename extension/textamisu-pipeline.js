@@ -3,6 +3,21 @@
   const language = (value) => ({eng:'en',jpn:'ja',kor:'ko',tha:'th',zho:'zh-TW',cmn:'zh-TW',zh:'zh-TW','zh-tw':'zh-TW'}[String(value).toLowerCase()] || value || 'auto');
   const sessionKey = (id) => `textamisuLive:${id}`;
   const starting = new Map();
+  let recovery;
+  function recoverSessions() {
+    if (!recovery) recovery = (async () => {
+      const records = await chrome.storage.local.get(null);
+      for (const [key, remoteId] of Object.entries(records)) {
+        if (!key.startsWith('textamisuRemote:')) continue;
+        const id = key.slice('textamisuRemote:'.length);
+        if ((await chrome.storage.session.get(sessionKey(id)))[sessionKey(id)]) continue;
+        try { await TextamisuApi.endSession(remoteId); }
+        catch (error) { if (![404,410].includes(error.status)) throw error; }
+        await chrome.storage.local.remove('textamisuRemote:' + id);
+      }
+    })().catch(error => { recovery = null; throw error; });
+    return recovery;
+  }
   const inDocument = () => typeof document !== 'undefined';
   function abortError(signal) { return signal?.reason || new DOMException('已取消請求','AbortError'); }
   function rpc(type, localId, payload, signal) {
@@ -31,6 +46,7 @@
     // Real offscreen documents only have chrome.runtime. Never read storage or
     // credentials there, including the runner iframe used by concurrent tabs.
     if (inDocument()) return rpc('TEXTAMISU_SESSION_START',localId);
+    await recoverSessions();
     const key = sessionKey(localId);
     const saved = (await chrome.storage.session.get(key))[key];
     if (saved?.sessionId) return saved;
@@ -38,6 +54,7 @@
     // the same time cannot create two separately rounded billing sessions.
     if (!starting.has(localId)) starting.set(localId, (async () => {
       const value = await TextamisuApi.startSession();
+      await chrome.storage.local.set({['textamisuRemote:' + localId]:value.sessionId});
       await chrome.storage.session.set({[key]:value});
       return value;
     })().finally(() => starting.delete(localId)));
@@ -53,6 +70,7 @@
     if (!value?.sessionId) return;
     await TextamisuApi.endSession(value.sessionId);
     await chrome.storage.session.remove(key);
+    await chrome.storage.local.remove('textamisuRemote:' + localId);
   }
   function encodeWav(samples, rate = 16000) {
     const data = new ArrayBuffer(44 + samples.length * 2), view = new DataView(data);

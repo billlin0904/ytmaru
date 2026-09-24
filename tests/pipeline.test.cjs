@@ -3,14 +3,14 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const {webcrypto}=require('node:crypto');
-function fixture() {
+function fixture(local = {}) {
   const saved={},calls=[];
   let starts=0;
   const context=vm.createContext({console,Blob,ArrayBuffer,Uint8Array,Float32Array,DataView,TextEncoder,DOMException,crypto:webcrypto,
-    chrome:{storage:{session:{get:async key=>({[key]:saved[key]}),set:async values=>Object.assign(saved,values),remove:async key=>delete saved[key]}}},
+    chrome:{storage:{local:{get:async key=>key===null?{...local}:{[key]:local[key]},set:async values=>Object.assign(local,values),remove:async key=>delete local[key]},session:{get:async key=>({[key]:saved[key]}),set:async values=>Object.assign(saved,values),remove:async key=>delete saved[key]}}},
     TextamisuApi:{startSession:async()=>{starts++;return {sessionId:'remote-1'};},endSession:async id=>calls.push({end:id}),stt:async(id,payload,options)=>{calls.push({id,payload,options});const length=(await payload.audio.arrayBuffer()).byteLength;return {text:'hello',language:'en',segments:[{start:0,end:1,text:'hello'}],durationMs:(length-44)/32,billableDurationMs:(length-44)/32,billing:{chargedCredits:1}};}}});
   vm.runInContext(fs.readFileSync('extension/textamisu-pipeline.js','utf8'),context);
-  return {api:context.TextamisuPipeline,calls,saved,starts:()=>starts};
+  return {api:context.TextamisuPipeline,calls,saved,local,starts:()=>starts};
 }
 test('parallel audio/chat starts share one persisted remote billing session',async()=>{
   const f=fixture(); await Promise.all([f.api.session('a'),f.api.session('a')]); assert.equal(f.starts(),1);
@@ -48,4 +48,21 @@ test('aborted audio never submits a paid STT operation',async()=>{
   const f=fixture(),controller=new AbortController();controller.abort();
   await assert.rejects(f.api.stt('a',f.api.encodeWav(new Float32Array(10)),{},controller.signal),{name:'AbortError'});
   assert.equal(f.calls.length,0);
+});
+
+test('reload closes journaled orphan sessions before creating a replacement',async()=>{
+  const f=fixture({'textamisuRemote:old':'remote-old'});
+  await f.api.session('new');
+  assert.deepEqual(f.calls,[{end:'remote-old'}]);
+  assert.equal(f.local['textamisuRemote:old'],undefined);
+  assert.equal(f.local['textamisuRemote:new'],'remote-1');
+  await f.api.end('new');
+  assert.deepEqual(f.local,{});
+});
+test('recovery keeps sessions still owned by the current worker lifetime',async()=>{
+  const f=fixture({'textamisuRemote:other':'remote-other'});
+  f.saved['textamisuLive:other']={sessionId:'remote-other'};
+  await f.api.session('new');
+  assert.deepEqual(f.calls,[]);
+  assert.equal(f.local['textamisuRemote:other'],'remote-other');
 });

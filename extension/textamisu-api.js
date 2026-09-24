@@ -42,7 +42,7 @@
     const code = data?.code || data?.errorCode || data?.error?.code || (typeof data?.error === "string" ? data.error : "textamisu_api_error");
     const detail = typeof data?.message === "string" ? data.message : typeof data?.error?.message === "string" ? data.error.message : typeof data?.error === "string" ? data.error : "";
     const labels = { 401: "Textamisu token 無效或已失效。", 402: "Textamisu 可用額度不足。", 403: "這個 token 沒有執行此操作的權限。", 409: "請求識別碼已用於不同內容，請重新開始字幕。", 429: "請求過於頻繁，請稍後再試。" };
-    let message = labels[status] || detail || `Textamisu API 請求失敗（${status}）。`;
+    let message = ({too_many_sessions: "直播工作階段已達 4 個；先前重載留下的工作尚未結束。", too_many_operations: "字幕工作正在處理中，請等待完成。"}[code]) || labels[status] || detail || `Textamisu API 請求失敗（${status}）。`;
     if (token) message = message.split(token).join("[redacted]");
     const error = new Error(message.slice(0, 500));
     error.status = status;
