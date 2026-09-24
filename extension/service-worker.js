@@ -70,7 +70,6 @@ async function handleTextamisuMessage(message,sender) {
  finally { if(running && textamisuRequests.get(message.rpcId)===running) textamisuRequests.delete(message.rpcId); }
 }
 const textamisuRequests=new Map(), textamisuSaves=new Map(), textamisuNarrationContext=new Map();
-const TEXTAMISU_NARRATION_MIN_INTERVAL_MS = 10_000;
 function textamisuIdentifier(value) {
  if(typeof value!=='string'||!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value)) throw new Error('無效的背景請求識別碼');
  return value;
@@ -6053,7 +6052,7 @@ async function textamisuNarrateDisplayed(active, segment = {}) {
   const notificationId = String(segment?.notificationId || "");
   const state = textamisuNarrationContext.get(sessionId) || { previousText: "", lastText: "", lastRequestedAt: 0, notificationId: "" };
   const now = Date.now();
-  if (state.notificationId === notificationId || state.lastText === text || now - state.lastRequestedAt < TEXTAMISU_NARRATION_MIN_INTERVAL_MS)
+  if (state.notificationId === notificationId || state.lastText === text)
     return { ok: !0, ignored: !0, reason: "throttled" };
   // Mark before the request so event retries and duplicate display notifications
   // cannot generate duplicate ElevenLabs calls.
