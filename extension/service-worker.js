@@ -6045,7 +6045,6 @@ async function si(e = {}, t = {}) {
   );
 }
 async function textamisuNarrateDisplayed(active, segment = {}) {
-  if (active?.config?.voiceTranslationEnabled === false) return { ok: !0, ignored: !0, reason: "disabled" };
   const text = String(segment?.translation || "").trim().slice(0, 240);
   if (!text) return { ok: !0, ignored: !0, reason: "empty-translation" };
   const sessionId = String(active.sessionId || "");
@@ -6073,6 +6072,13 @@ async function oi(e, t) {
     return { ok: !1, retryable: !1, reason: "unmanaged-tab" };
   if (!(await ds()))
     return { ok: !1, retryable: !0, reason: "offscreen-unavailable" };
+  // Narration starts from the display event itself. Recording can be skipped for
+  // a replayed/duplicate subtitle, but that must not suppress the spoken line.
+  try {
+    await textamisuNarrateDisplayed(a, e.segment || {});
+  } catch (error) {
+    console.warn("[service-worker] narration failed:", error?.message || error);
+  }
   try {
     const t =
         Array.isArray(e.segments) && e.segments.length
@@ -6097,11 +6103,6 @@ async function oi(e, t) {
       o = String(n?.notificationId || "");
     const delivered = !0 === n?.ok && !0 !== n?.ignored && !0 === n?.recorded && r.length > 0 && r.every((e) => i.has(e)) && o === s;
     if (!delivered) return { ok: !1, retryable: !1 !== n?.retryable, reason: n?.reason || "offscreen-display-not-recorded", error: n?.error || "" };
-    try {
-      await textamisuNarrateDisplayed(a, e.segment || t.at(-1) || {});
-    } catch (error) {
-      console.warn("[service-worker] narration failed:", error?.message || error);
-    }
     return { ok: !0, delivered: !0, reason: n?.duplicate ? "duplicate" : "recorded" };
   } catch (e) {
     return {
