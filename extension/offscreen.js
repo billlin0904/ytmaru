@@ -1504,17 +1504,54 @@ async function pc(e = {}) {
                 };
 }
 let textamisuNarrationAudio = null;
+const textamisuAudioQueue = [];
+let textamisuPlayingSession = "";
+function textamisuStopNarration(sessionId) {
+  for (let i = textamisuAudioQueue.length - 1; i >= 0; i--)
+    if (!sessionId || textamisuAudioQueue[i].sessionId === sessionId) textamisuAudioQueue.splice(i, 1);
+  if (textamisuNarrationAudio && (!sessionId || textamisuPlayingSession === sessionId)) {
+    const audio = textamisuNarrationAudio;
+    audio.onended = audio.onerror = null;
+    audio.pause();
+    audio.removeAttribute("src");
+    audio.load();
+    textamisuNarrationAudio = null;
+    textamisuPlayingSession = "";
+    void textamisuPlayNext().catch(error => console.warn("Narration playback failed", error));
+  }
+}
+async function textamisuPlayNext() {
+  if (textamisuNarrationAudio || !textamisuAudioQueue.length) return;
+  const item = textamisuAudioQueue.shift();
+  const audio = new Audio(`data:audio/mpeg;base64,${item.audioBase64}`);
+  textamisuNarrationAudio = audio;
+  textamisuPlayingSession = item.sessionId;
+  audio.volume = Math.max(0, Math.min(1, Number.isFinite(Number(item.volume)) ? Number(item.volume) : .8));
+  const finish = () => {
+    if (textamisuNarrationAudio !== audio) return;
+    audio.onended = audio.onerror = null;
+    audio.removeAttribute("src");
+    audio.load();
+    textamisuNarrationAudio = null;
+    textamisuPlayingSession = "";
+    void textamisuPlayNext().catch(error => console.warn("Narration playback failed", error));
+  };
+  audio.onended = finish;
+  audio.onerror = finish;
+  try { await audio.play(); }
+  catch (error) { finish(); throw error; }
+}
 async function fc(e = {}) {
   const t = String(e.sessionId || "").trim();
+  if ("RESET_SUBTITLE_TIMELINE" === e.type) textamisuStopNarration(t);
+  if ("STOP_TAB_AUDIO_CAPTURE" === e.type) textamisuStopNarration(t);
   if ("PLAY_TTS_AUDIO" === e.type) {
     const encoded = String(e.audioBase64 || "");
     if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length < 32 || encoded.length > 2666668) return { ok: !1, error: "無效的朗讀音訊" };
-    textamisuNarrationAudio?.pause();
-    const audio = new Audio(`data:audio/mpeg;base64,${encoded}`);
-    textamisuNarrationAudio = audio;
-    audio.volume = Math.max(0, Math.min(1, Number.isFinite(Number(e.volume)) ? Number(e.volume) : .8));
-    await audio.play();
-    return { ok: !0, playing: !0 };
+    const queued = !!textamisuNarrationAudio;
+    textamisuAudioQueue.push({ ...e, sessionId: t, audioBase64: encoded });
+    await textamisuPlayNext();
+    return { ok: !0, playing: !queued, queued };
   }
   if ("START_TAB_AUDIO_CAPTURE" === e.type) {
     if (!t) return { ok: !1, error: "missing sessionId for offscreen runner" };
@@ -1611,6 +1648,7 @@ async function Sc(e) {
   return n;
 }
 async function Mc(e, t = {}) {
+  textamisuStopNarration(e);
   if (!mc.has(e)) return { ok: !0, ignored: !0, reason: "runner-not-found" };
   const n = await yc(
     e,

@@ -8,13 +8,13 @@ function fixture({tts=async()=>({audioBase64:'fixture'}),active=true}={}){
  vm.runInContext(functions,context);
  return {calls,statuses,played,queue:(text,config={})=>context.textamisuQueueNarration({sessionId:'local',tabId:1,config},{notificationId:text,translation:text})};
 }
-test('narration keeps at most the latest pending cue and deduplicates display repeats',async()=>{
+test('narration queues every pending cue in order and deduplicates display repeats',async()=>{
  let release;const pending=new Promise(r=>release=r);let count=0;
  const f=fixture({tts:async()=>{if(!count++)await pending;return {audioBase64:'fixture'};}});
  const work=f.queue('first');await new Promise(r=>setImmediate(r));
  f.queue('middle');f.queue('latest');f.queue('latest');release();await work;
- assert.deepEqual(f.calls,['first','latest']);assert.equal(f.played.length,2);
- await f.queue('latest');assert.equal(f.calls.length,2);
+ assert.deepEqual(f.calls,['first','middle','latest']);assert.equal(f.played.length,3);
+ await f.queue('latest');assert.equal(f.calls.length,3);
 });
 test('failed narration reports error and allows following cues without stopping captions',async()=>{
  let count=0;const f=fixture({tts:async()=>{if(!count++)throw new Error('voice unavailable');return {audioBase64:'fixture'};}});

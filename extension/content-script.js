@@ -7758,7 +7758,7 @@
       ue.appendChild(label);
     }
     label.textContent = phase === 'error' ? `配音失敗：${message}`
-      : phase === 'generating' ? '配音產生中…' : '配音已送出播放';
+      : phase === 'generating' ? '配音產生中…' : phase === 'queued' ? '配音已排隊，等待上一句播完' : '配音已送出播放';
   }
   function textamisuNarrateRendered(text) {
     text = String(text || '').trim();

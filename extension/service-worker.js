@@ -6055,17 +6055,16 @@ async function si(e = {}, t = {}) {
 function textamisuQueueNarration(active, segment = {}) {
   const sessionId = String(active?.sessionId || "");
   if (!sessionId || active.config?.voiceTranslationEnabled === false || !String(segment?.translation || "").trim()) return;
-  const state = textamisuNarrationContext.get(sessionId) || { previousText: "", lastText: "", lastRequestedAt: 0, notificationId: "", inFlight: !1, pending: null };
+  const state = textamisuNarrationContext.get(sessionId) || { previousText: "", lastText: "", lastRequestedAt: 0, notificationId: "", inFlight: !1, pending: [] };
   const notificationId = String(segment?.notificationId || "");
-  if (state.notificationId === notificationId || state.pending?.notificationId === notificationId) return;
-  state.pending = { active, segment, notificationId };
+  if ((notificationId && state.notificationId === notificationId) || state.pending.some(item => item.notificationId === notificationId && item.segment.translation === segment.translation)) return;
+  state.pending.push({ active, segment, notificationId });
   textamisuNarrationContext.set(sessionId, state);
   if (state.inFlight) return state.draining;
   state.inFlight = !0;
   state.draining = (async () => {
-    while (state.pending) {
-      const next = state.pending;
-      state.pending = null;
+    while (state.pending.length) {
+      const next = state.pending.shift();
       try { await textamisuNarrateDisplayed(next.active, next.segment); }
       catch (error) {
         console.warn("[service-worker] narration failed:", error?.message || error);
@@ -6091,7 +6090,7 @@ async function textamisuNarrateDisplayed(active, segment = {}) {
   const notificationId = String(segment?.notificationId || "");
   const state = textamisuNarrationContext.get(sessionId) || { previousText: "", lastText: "", lastRequestedAt: 0, notificationId: "" };
   const now = Date.now();
-  if (state.notificationId === notificationId || state.lastText === text)
+  if ((notificationId && state.notificationId === notificationId) || state.lastText === text)
     return { ok: !0, ignored: !0, reason: "throttled" };
   // Mark before the request so event retries and duplicate display notifications
   // cannot generate duplicate ElevenLabs calls.
@@ -6110,7 +6109,7 @@ async function textamisuNarrateDisplayed(active, segment = {}) {
     volume: active.config?.voiceTranslationVolume,
   });
   if (!played?.ok) throw new Error(played?.error || "語音播放準備失敗");
-  await textamisuNarrationStatus(active, "played");
+  await textamisuNarrationStatus(active, played.queued ? "queued" : "played");
   state.previousText = text;
   textamisuNarrationContext.set(sessionId, state);
   return { ok: !0, played: !0 };
