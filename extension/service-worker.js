@@ -69,7 +69,7 @@ async function handleTextamisuMessage(message,sender) {
  } catch(error) { return {ok:false,error:error.message,name:error.name,code:error.code,status:error.status,requestId:error.requestId}; }
  finally { if(running && textamisuRequests.get(message.rpcId)===running) textamisuRequests.delete(message.rpcId); }
 }
-const textamisuRequests=new Map(), textamisuSaves=new Map();
+const textamisuRequests=new Map(), textamisuSaves=new Map(), textamisuNarrationContext=new Map();
 function textamisuIdentifier(value) {
  if(typeof value!=='string'||!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value)) throw new Error('無效的背景請求識別碼');
  return value;
@@ -6044,6 +6044,24 @@ async function si(e = {}, t = {}) {
     { ok: !0, config: r }
   );
 }
+async function textamisuNarrateDisplayed(active, segment = {}) {
+  if (active?.config?.voiceTranslationEnabled === false) return { ok: !0, ignored: !0, reason: "disabled" };
+  const text = String(segment?.translation || "").trim().slice(0, 240);
+  if (!text) return { ok: !0, ignored: !0, reason: "empty-translation" };
+  const sessionId = String(active.sessionId || "");
+  if (!sessionId) return { ok: !1, error: "missing narration session" };
+  const previousText = textamisuNarrationContext.get(sessionId) || "";
+  const remote = await TextamisuPipeline.session(sessionId);
+  const result = await TextamisuApi.tts(remote.sessionId, { text, previousText });
+  const played = await chrome.runtime.sendMessage({
+    target: "offscreen", type: "PLAY_TTS_AUDIO", sessionId,
+    audioBase64: result.audioBase64, mimeType: result.mimeType || "audio/mpeg",
+    volume: active.config?.voiceTranslationVolume,
+  });
+  if (!played?.ok) throw new Error(played?.error || "語音播放準備失敗");
+  textamisuNarrationContext.set(sessionId, text);
+  return { ok: !0, played: !0 };
+}
 async function oi(e, t) {
   const a = await Vo(e, t);
   if (!Gi(a, e.sessionId))
@@ -6077,23 +6095,14 @@ async function oi(e, t) {
       ),
       s = String(e.segment?.notificationId || r.at(-1) || ""),
       o = String(n?.notificationId || "");
-    return !0 === n?.ok &&
-      !0 !== n?.ignored &&
-      !0 === n?.recorded &&
-      r.length > 0 &&
-      r.every((e) => i.has(e)) &&
-      o === s
-      ? {
-          ok: !0,
-          delivered: !0,
-          reason: n?.duplicate ? "duplicate" : "recorded",
-        }
-      : {
-          ok: !1,
-          retryable: !1 !== n?.retryable,
-          reason: n?.reason || "offscreen-display-not-recorded",
-          error: n?.error || "",
-        };
+    const delivered = !0 === n?.ok && !0 !== n?.ignored && !0 === n?.recorded && r.length > 0 && r.every((e) => i.has(e)) && o === s;
+    if (!delivered) return { ok: !1, retryable: !1 !== n?.retryable, reason: n?.reason || "offscreen-display-not-recorded", error: n?.error || "" };
+    try {
+      await textamisuNarrateDisplayed(a, e.segment || t.at(-1) || {});
+    } catch (error) {
+      console.warn("[service-worker] narration failed:", error?.message || error);
+    }
+    return { ok: !0, delivered: !0, reason: n?.duplicate ? "duplicate" : "recorded" };
   } catch (e) {
     return {
       ok: !1,
@@ -8065,9 +8074,9 @@ async function Xi() {
   (await ds()) ||
     (await chrome.offscreen.createDocument({
       url: t,
-      reasons: ["USER_MEDIA"],
+      reasons: ["USER_MEDIA", "AUDIO_PLAYBACK"],
       justification:
-        "Capture tab audio and stream it to realtime speech-to-text.",
+        "Capture tab audio and play translated live narration.",
     }));
 }
 function Zi(e = {}) {
@@ -11852,3 +11861,4 @@ function Nl(e) {
       trustedAuthOrigins: [...L],
       verifyFirebaseSession: Xa,
     }));
+
