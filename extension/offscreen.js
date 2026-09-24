@@ -1508,7 +1508,7 @@ async function fc(e = {}) {
   const t = String(e.sessionId || "").trim();
   if ("PLAY_TTS_AUDIO" === e.type) {
     const encoded = String(e.audioBase64 || "");
-    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length < 32 || encoded.length > 360000) return { ok: !1, error: "無效的朗讀音訊" };
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length < 32 || encoded.length > 2666668) return { ok: !1, error: "無效的朗讀音訊" };
     textamisuNarrationAudio?.pause();
     const audio = new Audio(`data:audio/mpeg;base64,${encoded}`);
     textamisuNarrationAudio = audio;
