@@ -4,28 +4,39 @@
   let n = null,
     a = null;
   globalThis.__ytmaruVoiceNarrator?.stop?.();
-  const voiceNarrator = { unlocked: !1, generation: 0, audio: null, pending: null, lastText: "", previousText: "" };
-  globalThis.__ytmaruVoiceNarrator = { stop: () => { voiceNarrator.generation += 1; voiceNarrator.pending = null; voiceNarrator.audio?.pause(); voiceNarrator.audio = null; } };
+  const voiceNarrator = { unlocked: !1, generation: 0, audio: null, pendingAudio: null, lastText: "", previousText: "" };
+  function discardPendingAudio() { const pending = voiceNarrator.pendingAudio; pending?.audio?.pause(); pending?.url && URL.revokeObjectURL(pending.url); voiceNarrator.pendingAudio = null; }
+  function playNarration(candidate) {
+    const { audio, url, item } = candidate;
+    voiceNarrator.audio?.pause();
+    voiceNarrator.audio = audio;
+    audio.volume = Math.max(0, Math.min(1, Number.isFinite(Number(item.volume)) ? Number(item.volume) : .8));
+    audio.onended = audio.onerror = () => { URL.revokeObjectURL(url); if (voiceNarrator.audio === audio) voiceNarrator.audio = null; };
+    audio.play().then(() => { voiceNarrator.previousText = item.text; }).catch(() => {
+      if (voiceNarrator.audio === audio) voiceNarrator.audio = null;
+      voiceNarrator.unlocked = !1;
+      discardPendingAudio();
+      voiceNarrator.pendingAudio = candidate;
+    });
+  }
+  globalThis.__ytmaruVoiceNarrator = { stop: () => { voiceNarrator.generation += 1; voiceNarrator.audio?.pause(); voiceNarrator.audio = null; discardPendingAudio(); } };
   function narrateTranslation(detail) {
     if (!detail?.enabled || !detail?.sessionId || typeof detail.text !== "string" || !detail.text.trim()) return;
     const text = detail.text.trim().slice(0, 240);
     if (text === voiceNarrator.lastText) return;
     voiceNarrator.lastText = text;
-    voiceNarrator.pending = { ...detail, text, previousText: voiceNarrator.previousText };
-    if (!voiceNarrator.unlocked) return;
-    const item = voiceNarrator.pending, generation = ++voiceNarrator.generation;
-    voiceNarrator.pending = null;
-    if (voiceNarrator.audio) { voiceNarrator.audio.pause(); voiceNarrator.audio = null; }
+    const item = { ...detail, text, previousText: voiceNarrator.previousText }, generation = ++voiceNarrator.generation;
+    discardPendingAudio();
     chrome.runtime.sendMessage({ type: "TEXTAMISU_TTS", sessionId: item.sessionId, payload: { text: item.text, previousText: item.previousText } }).then((result) => {
       if (generation !== voiceNarrator.generation || !result?.ok || typeof result.data?.audioBase64 !== "string") return;
       const raw = atob(result.data.audioBase64), bytes = Uint8Array.from(raw, (char) => char.charCodeAt(0));
-      const url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" })), audio = new Audio(url);
-      voiceNarrator.audio = audio; audio.volume = Math.max(0, Math.min(1, Number.isFinite(Number(item.volume)) ? Number(item.volume) : .8));
-      audio.onended = audio.onerror = () => { URL.revokeObjectURL(url); if (voiceNarrator.audio === audio) voiceNarrator.audio = null; };
-      audio.play().then(() => { voiceNarrator.previousText = item.text; }).catch(() => { if (voiceNarrator.audio === audio) voiceNarrator.audio = null; URL.revokeObjectURL(url); voiceNarrator.unlocked = !1; voiceNarrator.pending = item; });
+      const candidate = { item, audio: new Audio(URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }))), url: null };
+      candidate.url = candidate.audio.src;
+      if (!voiceNarrator.unlocked) { voiceNarrator.pendingAudio = candidate; return; }
+      playNarration(candidate);
     }).catch(() => {});
   }
-  document.addEventListener("pointerdown", () => { voiceNarrator.unlocked = !0; const item = voiceNarrator.pending; if (item) { voiceNarrator.lastText = ""; narrateTranslation(item); } }, { capture: !0 });
+  document.addEventListener("pointerdown", () => { voiceNarrator.unlocked = !0; const candidate = voiceNarrator.pendingAudio; if (candidate) { voiceNarrator.pendingAudio = null; playNarration(candidate); } }, { capture: !0 });
   if (window.__aiLiveSubtitleMvp?.dispose)
     try {
       window.__aiLiveSubtitleMvp.dispose("reinjected");
