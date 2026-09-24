@@ -70,6 +70,7 @@ async function handleTextamisuMessage(message,sender) {
  finally { if(running && textamisuRequests.get(message.rpcId)===running) textamisuRequests.delete(message.rpcId); }
 }
 const textamisuRequests=new Map(), textamisuSaves=new Map(), textamisuNarrationContext=new Map();
+const TEXTAMISU_NARRATION_MIN_INTERVAL_MS = 10_000;
 function textamisuIdentifier(value) {
  if(typeof value!=='string'||!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value)) throw new Error('無效的背景請求識別碼');
  return value;
@@ -6049,16 +6050,27 @@ async function textamisuNarrateDisplayed(active, segment = {}) {
   if (!text) return { ok: !0, ignored: !0, reason: "empty-translation" };
   const sessionId = String(active.sessionId || "");
   if (!sessionId) return { ok: !1, error: "missing narration session" };
-  const previousText = textamisuNarrationContext.get(sessionId) || "";
+  const notificationId = String(segment?.notificationId || "");
+  const state = textamisuNarrationContext.get(sessionId) || { previousText: "", lastText: "", lastRequestedAt: 0, notificationId: "" };
+  const now = Date.now();
+  if (state.notificationId === notificationId || state.lastText === text || now - state.lastRequestedAt < TEXTAMISU_NARRATION_MIN_INTERVAL_MS)
+    return { ok: !0, ignored: !0, reason: "throttled" };
+  // Mark before the request so event retries and duplicate display notifications
+  // cannot generate duplicate ElevenLabs calls.
+  state.lastText = text;
+  state.lastRequestedAt = now;
+  state.notificationId = notificationId;
+  textamisuNarrationContext.set(sessionId, state);
   const remote = await TextamisuPipeline.session(sessionId);
-  const result = await TextamisuApi.tts(remote.sessionId, { text, previousText });
+  const result = await TextamisuApi.tts(remote.sessionId, { text, previousText: state.previousText });
   const played = await chrome.runtime.sendMessage({
     target: "offscreen", type: "PLAY_TTS_AUDIO", sessionId,
     audioBase64: result.audioBase64, mimeType: result.mimeType || "audio/mpeg",
     volume: active.config?.voiceTranslationVolume,
   });
   if (!played?.ok) throw new Error(played?.error || "語音播放準備失敗");
-  textamisuNarrationContext.set(sessionId, text);
+  state.previousText = text;
+  textamisuNarrationContext.set(sessionId, state);
   return { ok: !0, played: !0 };
 }
 async function oi(e, t) {
