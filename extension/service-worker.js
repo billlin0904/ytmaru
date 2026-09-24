@@ -924,6 +924,14 @@ async function Tt(e, t) {
       return Mo(t.tab?.id, { source: "content-ready", requireMounted: !1 });
     case "LIVE_SUBTITLE_SEGMENT_DISPLAYED":
       return oi(e, t);
+    case "LIVE_SUBTITLE_NARRATE": {
+      const active = await Vo(e, t);
+      if (t.id !== chrome.runtime.id || !Gi(active, e.sessionId) ||
+          t.tab?.id !== (active.displayTabId || active.tabId))
+        return { ok: false, error: "無效的配音來源" };
+      await textamisuQueueNarration(active, e.segment || {});
+      return { ok: true };
+    }
     case "LIVE_SUBTITLE_CLIENT_EVENT_LOG":
       return (await ci(e, t), { ok: !0 });
     case "MSE_AUDIO_SEGMENT":
@@ -6046,29 +6054,40 @@ async function si(e = {}, t = {}) {
 }
 function textamisuQueueNarration(active, segment = {}) {
   const sessionId = String(active?.sessionId || "");
-  if (!sessionId || !String(segment?.translation || "").trim()) return;
+  if (!sessionId || active.config?.voiceTranslationEnabled === false || !String(segment?.translation || "").trim()) return;
   const state = textamisuNarrationContext.get(sessionId) || { previousText: "", lastText: "", lastRequestedAt: 0, notificationId: "", inFlight: !1, pending: null };
   const notificationId = String(segment?.notificationId || "");
   if (state.notificationId === notificationId || state.pending?.notificationId === notificationId) return;
   state.pending = { active, segment, notificationId };
   textamisuNarrationContext.set(sessionId, state);
-  if (state.inFlight) return;
+  if (state.inFlight) return state.draining;
   state.inFlight = !0;
-  void (async () => {
+  state.draining = (async () => {
     while (state.pending) {
       const next = state.pending;
       state.pending = null;
       try { await textamisuNarrateDisplayed(next.active, next.segment); }
-      catch (error) { console.warn("[service-worker] narration failed:", error?.message || error); }
+      catch (error) {
+        console.warn("[service-worker] narration failed:", error?.message || error);
+        await textamisuNarrationStatus(next.active, "error", error?.message || "配音失敗");
+      }
     }
     state.inFlight = !1;
   })();
+  return state.draining;
+}
+async function textamisuNarrationStatus(active, phase, message = "") {
+  await chrome.tabs.sendMessage(active.displayTabId || active.tabId, {
+    type: "LIVE_SUBTITLE_NARRATION_STATUS", sessionId: active.sessionId,
+    phase, message: String(message).slice(0, 160),
+  }).catch(() => {});
 }
 async function textamisuNarrateDisplayed(active, segment = {}) {
   const text = String(segment?.translation || "").trim().slice(0, 240);
   if (!text) return { ok: !0, ignored: !0, reason: "empty-translation" };
   const sessionId = String(active.sessionId || "");
   if (!sessionId) return { ok: !1, error: "missing narration session" };
+  if (!await xo(sessionId)) return { ok: true, ignored: true };
   const notificationId = String(segment?.notificationId || "");
   const state = textamisuNarrationContext.get(sessionId) || { previousText: "", lastText: "", lastRequestedAt: 0, notificationId: "" };
   const now = Date.now();
@@ -6080,14 +6099,18 @@ async function textamisuNarrateDisplayed(active, segment = {}) {
   state.lastRequestedAt = now;
   state.notificationId = notificationId;
   textamisuNarrationContext.set(sessionId, state);
+  await textamisuNarrationStatus(active, "generating");
   const remote = await TextamisuPipeline.session(sessionId);
-  const result = await TextamisuApi.tts(remote.sessionId, { text, previousText: state.previousText });
+  const result = await TextamisuApi.tts(remote.sessionId, { text, previousText: state.previousText }, { timeoutMs: 25000 });
+  if (!await xo(sessionId)) return { ok: true, ignored: true };
+  await Xi();
   const played = await chrome.runtime.sendMessage({
     target: "offscreen", type: "PLAY_TTS_AUDIO", sessionId,
     audioBase64: result.audioBase64, mimeType: result.mimeType || "audio/mpeg",
     volume: active.config?.voiceTranslationVolume,
   });
   if (!played?.ok) throw new Error(played?.error || "語音播放準備失敗");
+  await textamisuNarrationStatus(active, "played");
   state.previousText = text;
   textamisuNarrationContext.set(sessionId, state);
   return { ok: !0, played: !0 };
@@ -6096,9 +6119,8 @@ async function oi(e, t) {
   const a = await Vo(e, t);
   if (!Gi(a, e.sessionId))
     return { ok: !1, retryable: !1, reason: "session-not-active" };
-  // Keep narration outside the subtitle acknowledgement path. A slow or
-  // failed voice request must never retry, delay, or stop live subtitles.
-  textamisuQueueNarration(a, e.segment || {});
+  // Recording acknowledgements are independent of narration. The renderer
+  // emits a dedicated event for every display path, including cached cues.
   const n = t.tab?.id;
   if (a?.syncEnabled && a?.displayTabId && n !== a.displayTabId)
     return { ok: !1, retryable: !1, reason: "not-display-tab" };

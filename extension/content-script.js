@@ -645,6 +645,11 @@
     ].join(", ");
   }
   function ct(e, t, n) {
+    if (e?.type === "LIVE_SUBTITLE_NARRATION_STATUS") {
+      if (e.sessionId === F.sessionId) textamisuShowVoiceStatus(e.phase, e.message);
+      n({ ok: true });
+      return false;
+    }
     if ("LIVE_SUBTITLE_CONTENT_SCRIPT_PROBE" !== e?.type)
       if ("LIVE_SUBTITLE_PAGE_INFO_REQUEST" !== e?.type)
         if ("LIVE_SUBTITLE_MSE_HOOK_STATUS" !== e?.type) {
@@ -7741,6 +7746,34 @@
   function Za() {
     return Boolean((F.pendingOriginal || F.draftOriginal) && Xa());
   }
+  let textamisuLastNarrated = "";
+  function textamisuShowVoiceStatus(phase, message = "") {
+    if (!ue) return;
+    let label = ue.querySelector('[data-textamisu-voice]');
+    if (!label) {
+      label = document.createElement('span');
+      label.dataset.textamisuVoice = 'true';
+      label.setAttribute('role', 'status');
+      label.style.cssText = 'display:block;padding:2px 12px;font-size:12px;color:#b8c5da';
+      ue.appendChild(label);
+    }
+    label.textContent = phase === 'error' ? `配音失敗：${message}`
+      : phase === 'generating' ? '配音產生中…' : '配音已送出播放';
+  }
+  function textamisuNarrateRendered(text) {
+    text = String(text || '').trim();
+    if (!F.sessionId || !text || F.config?.voiceTranslationEnabled === false) return;
+    const key = `${F.sessionId}:${text}`;
+    if (key === textamisuLastNarrated) return;
+    textamisuLastNarrated = key;
+    textamisuShowVoiceStatus('generating');
+    chrome.runtime.sendMessage({
+      type: 'LIVE_SUBTITLE_NARRATE', sessionId: F.sessionId,
+      segment: { notificationId: key, translation: text },
+    }).then(reply => {
+      if (!reply?.ok) textamisuShowVoiceStatus('error', reply?.error || '背景配音未回應');
+    }).catch(() => textamisuShowVoiceStatus('error', '背景配音連線中斷，請重新載入頁面'));
+  }
   function ei() {
     if (!ue) return;
     const e = oi(),
@@ -8044,6 +8077,9 @@
           })(s, r)),
       d = l ? "" : _c(s, "original") || Ti(),
       c = l ? "" : _c(r, "translation") || ki(Boolean(s));
+    // All real subtitle paths converge here; queue-only notifications miss
+    // direct translation updates and restored/cached active cues.
+    if (!n && !l && r) textamisuNarrateRendered(r);
     ((me.original.textContent = d),
       (me.original.title = s && s !== d ? s : ""),
       (me.translation.textContent = c),
