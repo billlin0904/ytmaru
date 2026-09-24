@@ -16,7 +16,7 @@
     syncEnabled: true, syncDelayMode: "fixed", syncDelaySeconds: 10, batchWaitSeconds: 0,
     mseAudioBufferEnabled: true, mseBatchSttPipelineEnabled: true, mseSegmentSttPipelineEnabled: true,
     audioInputMode: "mse-audio-buffer", mseStartupBoostEnabled: false, audioPrefetchEnabled: false,
-    voiceTranslationEnabled: true, voiceTranslationVolume: 0.8,
+    voiceTranslationEnabled: true, voiceTranslationVolume: 0.8, voiceTranslationPreviewSeen: false,
     mseSeekCatchupEnabled: true, mseStartupBoostMode: "fast", mseStartupBoostTargetSeconds: 24,
     disableSubtitleCache: true, adaptiveSyncDelayEnabled: false, sourcePreloadEnabled: false,
     sourcePreloadMaxLeadSeconds: 60, autoSkipAds: true, subtitleBufferTargetSegments: 3,
@@ -161,6 +161,13 @@
     await globalThis.PopupI18n?.ready;
     const stored = (await chrome.storage.local.get(CONFIG_KEY))[CONFIG_KEY] || {};
     for (const key of Object.keys(DEFAULTS)) if (Object.hasOwn(stored, key)) settings[key] = stored[key];
+    // 0.2.6 stored the original off default before this preview was enabled.
+    // Migrate that one legacy value once, while preserving any later user choice.
+    if (!stored.voiceTranslationPreviewSeen) {
+      settings.voiceTranslationEnabled = true;
+      settings.voiceTranslationPreviewSeen = true;
+      await chrome.storage.local.set({ [CONFIG_KEY]: { ...stored, voiceTranslationEnabled: true, voiceTranslationPreviewSeen: true } });
+    }
     const api = await TextamisuApi.getConfig();
     Object.assign(settings, { backendUrl: api.baseUrl, apiProvider: "textamisu", sttProvider: "st-a", provider: "lt-n", sttAudioSpeed: 1, llmFallbackMode: "off", sttContextAutoResearchEnabled: false, sttContextRefreshEnabled: false, liveSharedEnabled: false });
     if (!["auto", "zh", "eng", "jpn", "kor", "tha"].includes(settings.sourceLang)) settings.sourceLang = "auto";
