@@ -6065,6 +6065,13 @@ async function oi(e, t) {
   const a = await Vo(e, t);
   if (!Gi(a, e.sessionId))
     return { ok: !1, retryable: !1, reason: "session-not-active" };
+  // This event can originate from a source or mirror display tab. Once the
+  // local session is confirmed, narration must not depend on that routing.
+  try {
+    await textamisuNarrateDisplayed(a, e.segment || {});
+  } catch (error) {
+    console.warn("[service-worker] narration failed:", error?.message || error);
+  }
   const n = t.tab?.id;
   if (a?.syncEnabled && a?.displayTabId && n !== a.displayTabId)
     return { ok: !1, retryable: !1, reason: "not-display-tab" };
@@ -6072,13 +6079,6 @@ async function oi(e, t) {
     return { ok: !1, retryable: !1, reason: "unmanaged-tab" };
   if (!(await ds()))
     return { ok: !1, retryable: !0, reason: "offscreen-unavailable" };
-  // Narration starts from the display event itself. Recording can be skipped for
-  // a replayed/duplicate subtitle, but that must not suppress the spoken line.
-  try {
-    await textamisuNarrateDisplayed(a, e.segment || {});
-  } catch (error) {
-    console.warn("[service-worker] narration failed:", error?.message || error);
-  }
   try {
     const t =
         Array.isArray(e.segments) && e.segments.length
