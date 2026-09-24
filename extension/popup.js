@@ -16,6 +16,7 @@
     syncEnabled: true, syncDelayMode: "fixed", syncDelaySeconds: 10, batchWaitSeconds: 0,
     mseAudioBufferEnabled: true, mseBatchSttPipelineEnabled: true, mseSegmentSttPipelineEnabled: true,
     audioInputMode: "mse-audio-buffer", mseStartupBoostEnabled: false, audioPrefetchEnabled: false,
+    voiceTranslationEnabled: false, voiceTranslationVolume: 0.8,
     mseSeekCatchupEnabled: true, mseStartupBoostMode: "fast", mseStartupBoostTargetSeconds: 24,
     disableSubtitleCache: true, adaptiveSyncDelayEnabled: false, sourcePreloadEnabled: false,
     sourcePreloadMaxLeadSeconds: 60, autoSkipAds: true, subtitleBufferTargetSegments: 3,

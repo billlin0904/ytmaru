@@ -36,6 +36,12 @@ async function handleTextamisuMessage(message,sender) {
   if(!active || (!internal&&!Zo(active).includes(Number(sender.tab?.id)))) throw new Error('字幕工作階段已結束');
   if(message.type==='TEXTAMISU_SESSION_START') { if(!internal) throw new Error('無效的來源'); return {ok:true,data:await TextamisuPipeline.session(message.sessionId)}; }
   if(message.type==='TEXTAMISU_SAVE_SEGMENT') return {ok:true,data:await textamisuSaveSegment(message.sessionId,message.payload)};
+  if(message.type==='TEXTAMISU_TTS') {
+   const payload=textamisuTtsPayload(message.payload),remote=await TextamisuPipeline.session(message.sessionId);
+   const result=await TextamisuApi.tts(remote.sessionId,payload);
+   if(!await xo(message.sessionId)) throw new Error('字幕工作階段已結束');
+   return {ok:true,data:result};
+  }
   if(running) {
    const signal=running.controller.signal;
    if(signal.aborted) throw signal.reason;
@@ -85,6 +91,9 @@ function textamisuSttPayload(payload={}) {
 function textamisuCaptionPayload(payload={}) {
  if(!Array.isArray(payload.sttRequestIds)||payload.sttRequestIds.length<1||payload.sttRequestIds.length>12) throw new Error('字幕須有 1 至 12 筆語音辨識來源');
  return {requestId:textamisuIdentifier(payload.requestId),sttRequestIds:payload.sttRequestIds.map(textamisuIdentifier),text:textamisuText(payload.text,4000),sourceLanguage:TextamisuPipeline.language(textamisuText(payload.sourceLanguage,32)),targetLanguage:TextamisuPipeline.language(textamisuText(payload.targetLanguage,32)),previousSourceContext:textamisuText(payload.previousSourceContext,1500,true)};
+}
+function textamisuTtsPayload(payload={}) {
+ return {text:textamisuText(payload.text,240),previousText:textamisuText(payload.previousText,500,true)};
 }
 async function textamisuSaveSegment(localId,payload={}) {
  const metadata=payload.metadata||{},input=payload.segment||{},segment={};

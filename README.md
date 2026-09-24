@@ -20,6 +20,8 @@ Token 只存在擴充功能的 `chrome.storage.session`，關閉瀏覽器後需�
 
 0.2.4 讓含聊天重播的 YouTube 影片也能顯示「聊天」入口。展開 YouTube 聊天室後，點字幕工具列的「聊天」，選擇留言的來源語言並確認文字計費，即可翻譯接下來的新留言。聊天室語言可獨立設定，不會更動語音辨識的自動偵測；未選語言不會送出翻譯請求，服務失敗會顯示原因。聊天重播不能送出回覆。
 
+0.2.6 新增「語音翻譯（Beta）」：Textamisu 後端以 ElevenLabs 合成已翻譯字幕，外掛只收到短音訊，沒有 ElevenLabs API key。為避免語音落後直播，播放器只保留最新的字幕，新的字幕會略過舊的朗讀。瀏覽器需要先在影片頁面點一下才能播放音訊。此功能需伺服器設定 `ELEVENLABS_TTS_ENABLED=true`、`ELEVENLABS_API_KEY` 與 `ELEVENLABS_VOICE_ID`；未啟用時不會產生語音或扣除 TTS 費用。
+
 0.2.5 支援 YouTube 已顯示聊天室、但 `iframe#chatframe` 沒有 `src` 屬性的頁面。判斷時會確認聊天室容器與 iframe 實際可見，避免一般影片的空白容器誤顯示入口。
 
 ## API 與計費

@@ -356,6 +356,8 @@
             <label class="input-field user-model-field user-translation-model-field"><span class="input-label">字幕翻譯</span><select id="provider"><option value="lt-n">Textamisu 翻譯</option></select><span id="providerHint" class="field-hint">支援英文、日文、韓文、泰文、繁體中文</span></label>
           </div></article>
           <label class="switch user-model-field user-playback-field"><span class="switch-text"><span class="switch-title">音訊預取加速</span></span><span class="switch-control"><input id="audioPrefetchEnabled" type="checkbox" /><span class="switch-track" aria-hidden="true"></span></span></label>
+          <label class="switch user-model-field user-playback-field"><span class="switch-text"><span class="switch-title">語音翻譯（Beta）</span><span class="switch-desc">使用 Textamisu 的 ElevenLabs 語音朗讀已翻譯的字幕；啟動後請在影片頁面點一下以開啟播放。</span></span><span class="switch-control"><input id="voiceTranslationEnabled" type="checkbox" /><span class="switch-track" aria-hidden="true"></span></span></label>
+          <label class="input-field user-model-field user-playback-field"><span class="input-label">語音音量</span><input id="voiceTranslationVolume" type="range" min="0" max="1" step="0.05" value="0.8" /></label>
           <label class="switch user-model-field user-playback-field"><span class="switch-text"><span class="switch-title">自動略過可略過廣告</span><span class="switch-desc">不可略過廣告會暫停同步</span></span><span class="switch-control"><input id="autoSkipAds" type="checkbox" /><span class="switch-track" aria-hidden="true"></span></span></label>
           <input id="mseSeekCatchupEnabled" type="checkbox" checked hidden /><input id="llmFallbackMode" type="hidden" value="off" />
         </section>

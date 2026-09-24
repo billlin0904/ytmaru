@@ -62,7 +62,7 @@
     const safeType = allowedTypes.includes(type) ? type : type ? "other" : "missing";
     const route = ["/credits", "/live-sessions"].includes(path) ? path
       : /^\/live-sessions\/[^/]+\/operations\/[^/]+$/.test(path) ? "/live-sessions/:id/operations/:requestId"
-      : /^\/live-sessions\/[^/]+\/(stt|translate|chat-translate|end)$/.test(path) ? "/live-sessions/:id/" + path.split("/").at(-1)
+      : /^\/live-sessions\/[^/]+\/(stt|translate|chat-translate|tts|end)$/.test(path) ? "/live-sessions/:id/" + path.split("/").at(-1)
       : /^\/live-sessions\/[^/]+$/.test(path) ? "/live-sessions/:id" : "unknown-route";
     return { method: ["GET", "POST"].includes(method) ? method : "OTHER", route, contentType: safeType };
   }
@@ -222,6 +222,18 @@
       sourceLanguage: language(payload.sourceLanguage), targetLanguage: language(payload.targetLanguage, "zh-TW"), mode: payload.mode === "reply" ? "reply" : "live-chat",
     }, payload.requestId, options);
   }
+  async function tts(sessionId, payload, options = {}) {
+    const response = await request(`${sessionPath(sessionId)}/tts`, {
+      ...options, method: "POST", body: {
+        text: String(payload.text || ""),
+        ...(payload.previousText ? { previousText: String(payload.previousText) } : {}),
+      },
+    });
+    if (typeof response.data?.audioBase64 !== "string" || response.data.audioBase64.length < 16 || response.data.mimeType !== "audio/mpeg") {
+      throw responseError(response.status, response.diagnostic, "invalid_tts_response", "Textamisu API 未回傳有效語音資料。");
+    }
+    return response.data;
+  }
   globalThis.TextamisuApi = Object.freeze({
     CONFIG_KEY, TOKEN_KEY, DEFAULT_BASE_URL, normalizeBaseUrl, language, getConfig, saveConfig, clearToken,
     credits: async (options = {}) => (await request("/credits", options)).data,
@@ -234,6 +246,6 @@
     },
     session: async (id, options = {}) => (await request(sessionPath(id), options)).data,
     endSession: async (id, options = {}) => (await request(`${sessionPath(id)}/end`, { ...options, method: "POST", body: {} })).data,
-    stt, translate, chatTranslate, operation,
+    stt, translate, chatTranslate, tts, operation,
   });
 })();
