@@ -133,8 +133,41 @@
     } catch (error) { message(error.message, true); }
     finally { busy = false; buttons(); }
   }
+  function startupProgressText(progress, startedAt) {
+    const stages = {
+      "start-enter": "正在讀取帳號與設定",
+      "tab-resolved": "正在讀取現有字幕工作",
+      "sessions-loaded": "正在檢查影片分頁",
+      "reusable-tabs-resolved": "正在檢查工作數量",
+      "concurrency-ready": "正在清理上一個字幕工作",
+      "previous-sessions-cleaned": "正在準備影片來源",
+      "reusable-context-ready": "正在檢查網站權限與載入字幕程式",
+      "source-script-ready": "正在讀取影片資訊",
+      "source-info-ready": "正在準備音訊與同步設定",
+      "subtitle-cache-checking": "正在檢查字幕快取",
+      "subtitle-cache-checked": "正在啟動背景音訊頁面",
+      "offscreen-ready": "正在建立字幕工作",
+      "session-created": "正在建立字幕視窗",
+      "display-ready": "字幕視窗已建立，正在擷取音訊",
+      "capture-ready": "音訊已就緒，正在完成啟動",
+      "complete": "啟動已完成，等待背景回覆",
+      "failed": "背景回報啟動失敗",
+    };
+    const fresh = progress && progress.atMs >= startedAt && progress.startedAtMs >= startedAt;
+    const stage = fresh ? progress.stage : "waiting-background";
+    const seconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+    return `${fresh ? (stages[stage] || "正在啟動字幕") : "等待背景啟動回覆"}（${seconds} 秒；${stage}）`;
+  }
   async function start() {
     busy = true; buttons(); setStatus("啟動中", "starting"); message("正在建立字幕工作…");
+    const startedAt = Date.now();
+    let watching = true;
+    const progressTimer = setInterval(async () => {
+      try {
+        const saved = await chrome.storage.local.get("liveSubtitleStartProgress");
+        if (watching) message(startupProgressText(saved.liveSubtitleStartProgress, startedAt));
+      } catch {}
+    }, 1000);
     try {
       if (!(await TextamisuAuth.status()).configured) throw new Error("請先輸入 Textamisu token。");
       const tab = await currentTab();
@@ -144,7 +177,7 @@
       if (!result?.ok) throw new Error(result?.error || "字幕啟動失敗。");
       active = true; setStatus("字幕中", "active"); message("字幕已啟動。");
     } catch (error) { setStatus("錯誤", "error"); message(error.message, true); }
-    finally { busy = false; buttons(); }
+    finally { watching = false; clearInterval(progressTimer); busy = false; buttons(); }
   }
   async function stop() {
     busy = true; buttons();
